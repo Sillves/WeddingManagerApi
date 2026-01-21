@@ -1,0 +1,7 @@
+﻿services:
+  weddingmanagerapi:
+    image: weddingmanagerapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+

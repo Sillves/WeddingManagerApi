@@ -1,0 +1,17 @@
+﻿namespace WeddingManager.Domain.Entities;
+
+public class Wedding
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string Location { get; set; } = string.Empty;
+    
+    public Guid UserId { get; set; }
+    public User User { get; set; } = null!;
+
+    public ICollection<Guest> Guests { get; set; } = null!;
+    public ICollection<Page> Pages { get; set; } = null!;
+    public ICollection<Media> Media { get; set; } = null!;
+}
