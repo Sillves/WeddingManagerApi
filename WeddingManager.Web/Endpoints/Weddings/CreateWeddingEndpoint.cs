@@ -17,7 +17,7 @@ public class CreateWedding : IEndpoint
                 Slug = request.Slug,
                 Date = request.Date,
                 Location = request.Location,
-                UserId = request.UserId
+                UserId = request.UserId // TODO must come out of the user store
             };
 
             await weddingService.AddAsync(wedding);
@@ -25,6 +25,7 @@ public class CreateWedding : IEndpoint
         })
         .WithTags("Weddings")
         .WithName("CreateWedding")
-        .WithOpenApi();
+        .WithOpenApi()
+        .RequireAuthorization();
     }
 }

@@ -9,10 +9,11 @@ public class GetWeddings : IEndpoint
         app.MapGet("/api/weddings", async (IWeddingService weddingService) =>
         {
             var weddings = await weddingService.GetAllAsync();
-            return Results.Ok(weddings);
+            return Results.Ok(weddings); // TODO get returns weird data
         })
         .WithTags("Weddings")
         .WithName("GetWeddings")
-        .WithOpenApi();
+        .WithOpenApi()
+        .RequireAuthorization();
     }
 }

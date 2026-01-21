@@ -13,6 +13,7 @@ public class DeleteWeddingEndpoint : IEndpoint
         })
         .WithTags("Weddings")
         .WithName("DeleteWedding")
-        .WithOpenApi();
+        .WithOpenApi()
+        .RequireAuthorization();
     }
 }
