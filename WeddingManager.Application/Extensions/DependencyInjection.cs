@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.Interfaces;
 
@@ -11,6 +12,10 @@ public static class DependencyInjection
         // Add application services here as they are created
         services.AddScoped<IWeddingService, WeddingService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddAutoMapper(cfg => 
+        {
+            cfg.AddProfile<MappingProfile>();
+        });        
         return services;
     }
 }

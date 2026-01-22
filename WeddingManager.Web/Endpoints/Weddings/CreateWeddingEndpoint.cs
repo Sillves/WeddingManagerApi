@@ -1,3 +1,5 @@
+using AutoMapper;
+using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Models;
@@ -8,17 +10,9 @@ public class CreateWedding : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/weddings", async (CreateWeddingRequest request, IWeddingService weddingService) =>
+        app.MapPost("/api/weddings", async (CreateWeddingRequestDto requestDto, IWeddingService weddingService, IMapper mapper) =>
         {
-            var wedding = new Wedding
-            {
-                Id = Guid.NewGuid(),
-                Title = request.Title,
-                Slug = request.Slug,
-                Date = request.Date,
-                Location = request.Location,
-                UserId = request.UserId // TODO must come out of the user store
-            };
+            var wedding = mapper.Map<Wedding>(requestDto);
 
             await weddingService.AddAsync(wedding);
             return Results.Created($"/api/weddings/{wedding.Id}", wedding);
