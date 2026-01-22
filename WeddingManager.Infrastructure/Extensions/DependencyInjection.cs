@@ -47,7 +47,8 @@ public static class DependencyInjection
                 };
             });
         services.AddScoped<IWeddingRepository, WeddingRepository>();
-
+        services.AddScoped<IGuestRepository, GuestRepository>();
+        services.AddScoped<IWeddingUserRepository, WeddingUserRepository>();
         return services;
     }
 }

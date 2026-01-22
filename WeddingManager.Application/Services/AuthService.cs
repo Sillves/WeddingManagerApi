@@ -10,18 +10,8 @@ using WeddingManager.Domain.Interfaces;
 
 namespace WeddingManager.Application.Services;
 
-public class AuthService : IAuthService
+public class AuthService(UserManager<User> userManager, IConfiguration configuration, ILogger<AuthService> logger) : IAuthService
 {
-    private readonly UserManager<User> _userManager;
-    private readonly IConfiguration _configuration;
-    private readonly ILogger<AuthService> _logger;
-
-    public AuthService(UserManager<User> userManager, IConfiguration configuration, ILogger<AuthService> logger)
-    {
-        _userManager = userManager;
-        _configuration = configuration;
-        _logger = logger;
-    }
 
     public async Task<(bool Success, string Message, Guid? UserId)> RegisterAsync(string email, string firstName, string lastName, string password)
     {
@@ -33,7 +23,7 @@ public class AuthService : IAuthService
             LastName = lastName
         };
 
-        var result = await _userManager.CreateAsync(user, password);
+        var result = await userManager.CreateAsync(user, password);
 
         if (!result.Succeeded)
         {
@@ -46,8 +36,8 @@ public class AuthService : IAuthService
 
     public async Task<(bool Success, string Message, string? Token)> LoginAsync(string email, string password)
     {
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user == null || !await _userManager.CheckPasswordAsync(user, password))
+        var user = await userManager.FindByEmailAsync(email);
+        if (user == null || !await userManager.CheckPasswordAsync(user, password))
         {
             return (false, "Invalid credentials", null);
         }
@@ -67,13 +57,13 @@ public class AuthService : IAuthService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found")));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found")));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expires = DateTime.UtcNow.AddDays(Convert.ToDouble(_configuration["Jwt:ExpireDays"] ?? "7"));
+        var expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:ExpireDays"] ?? "7"));
 
         var token = new JwtSecurityToken(
-            _configuration["Jwt:Issuer"],
-            _configuration["Jwt:Audience"],
+            configuration["Jwt:Issuer"],
+            configuration["Jwt:Audience"],
             claims,
             expires: expires,
             signingCredentials: creds

@@ -1,0 +1,28 @@
+meta {
+  name: CreateGuest
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/weddings/550e8400-e29b-41d4-a716-446655440000/guests
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "{{$randomFirstName}} {{$randomLastName}}",
+    "email": "{{$randomEmail}}",
+    "rsvpStatus": "Pending"
+  }
+}
+
+settings {
+  encodeUrl: false
+  timeout: 0
+}

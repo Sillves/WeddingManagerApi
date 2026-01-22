@@ -2,7 +2,6 @@ using AutoMapper;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
-using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Weddings;
 

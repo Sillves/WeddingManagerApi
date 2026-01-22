@@ -6,14 +6,12 @@ using WeddingManager.Domain.Entities;
 
 namespace WeddingManager.Infrastructure.Data;
 
-public class WeddingDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
+public class WeddingDbContext(DbContextOptions<WeddingDbContext> options)
+    : IdentityDbContext<User, IdentityRole<Guid>, Guid>(options)
 {
-    public WeddingDbContext(DbContextOptions<WeddingDbContext> options) : base(options)
-    {
-    }
-
     public DbSet<Wedding> Weddings => Set<Wedding>();
     public DbSet<Guest> Guests => Set<Guest>();
+    public DbSet<WeddingUser> WeddingUsers => Set<WeddingUser>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<Media> Media => Set<Media>();
     

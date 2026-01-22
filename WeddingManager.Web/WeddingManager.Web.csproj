@@ -24,6 +24,8 @@
 
   <ItemGroup>
     <Folder Include="Endpoints\Auth\" />
+    <Folder Include="Endpoints\Guests\" />
+    <Folder Include="Endpoints\WeddingUser\" />
   </ItemGroup>
 
 </Project>

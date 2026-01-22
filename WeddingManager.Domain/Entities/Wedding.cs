@@ -10,7 +10,8 @@ public class Wedding
     
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;
-
+    
+    public ICollection<WeddingUser> WeddingUsers { get; set; } = null!;
     public ICollection<Guest> Guests { get; set; } = null!;
     public ICollection<Page> Pages { get; set; } = null!;
     public ICollection<Media> Media { get; set; } = null!;

@@ -163,13 +163,15 @@ namespace WeddingManager.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<bool>("IsAttending")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<string>("RsvpStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("WeddingId")
                         .HasColumnType("uuid");
@@ -357,6 +359,28 @@ namespace WeddingManager.Infrastructure.Migrations
                     b.ToTable("Weddings");
                 });
 
+            modelBuilder.Entity("WeddingManager.Domain.Entities.WeddingUser", b =>
+                {
+                    b.Property<Guid>("WeddingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("WeddingId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("WeddingUsers");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -452,8 +476,29 @@ namespace WeddingManager.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("WeddingManager.Domain.Entities.WeddingUser", b =>
+                {
+                    b.HasOne("WeddingManager.Domain.Entities.User", "User")
+                        .WithMany("WeddingUsers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WeddingManager.Domain.Entities.Wedding", "Wedding")
+                        .WithMany("WeddingUsers")
+                        .HasForeignKey("WeddingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+
+                    b.Navigation("Wedding");
+                });
+
             modelBuilder.Entity("WeddingManager.Domain.Entities.User", b =>
                 {
+                    b.Navigation("WeddingUsers");
+
                     b.Navigation("Weddings");
                 });
 
@@ -464,6 +509,8 @@ namespace WeddingManager.Infrastructure.Migrations
                     b.Navigation("Media");
 
                     b.Navigation("Pages");
+
+                    b.Navigation("WeddingUsers");
                 });
 #pragma warning restore 612, 618
         }

@@ -189,7 +189,7 @@ namespace WeddingManager.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    IsAttending = table.Column<bool>(type: "boolean", nullable: false),
+                    RsvpStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     WeddingId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -239,6 +239,32 @@ namespace WeddingManager.Infrastructure.Migrations
                     table.PrimaryKey("PK_Pages", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Pages_Weddings_WeddingId",
+                        column: x => x.WeddingId,
+                        principalTable: "Weddings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WeddingUsers",
+                columns: table => new
+                {
+                    WeddingId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Role = table.Column<string>(type: "text", nullable: false),
+                    AddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WeddingUsers", x => new { x.WeddingId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_WeddingUsers_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_WeddingUsers_Weddings_WeddingId",
                         column: x => x.WeddingId,
                         principalTable: "Weddings",
                         principalColumn: "Id",
@@ -313,6 +339,11 @@ namespace WeddingManager.Infrastructure.Migrations
                 name: "IX_Weddings_UserId",
                 table: "Weddings",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WeddingUsers_UserId",
+                table: "WeddingUsers",
+                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -341,6 +372,9 @@ namespace WeddingManager.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Pages");
+
+            migrationBuilder.DropTable(
+                name: "WeddingUsers");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

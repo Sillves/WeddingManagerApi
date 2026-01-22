@@ -1,6 +1,4 @@
-using WeddingManager.Application;
 using WeddingManager.Application.Extensions;
-using WeddingManager.Infrastructure;
 using WeddingManager.Infrastructure.Extensions;
 using WeddingManager.Web.Endpoints;
 

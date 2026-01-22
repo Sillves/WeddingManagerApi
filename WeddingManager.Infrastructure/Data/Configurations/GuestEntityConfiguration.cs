@@ -12,6 +12,11 @@ public class GuestConfiguration : IEntityTypeConfiguration<Guest>
         builder.Property(e => e.Name).IsRequired().HasMaxLength(255);
         builder.Property(e => e.Email).IsRequired().HasMaxLength(255);
 
+        builder.Property(e => e.RsvpStatus)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasConversion<string>();
+        
         builder.HasIndex(e => new { e.WeddingId, e.Email }).IsUnique();
         builder.HasIndex(e => e.WeddingId);
 

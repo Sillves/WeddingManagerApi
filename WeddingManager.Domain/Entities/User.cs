@@ -9,4 +9,5 @@ public class User : IdentityUser<Guid>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Wedding> Weddings { get; set; } = null!;
+    public ICollection<WeddingUser> WeddingUsers { get; set; } = null!;
 }

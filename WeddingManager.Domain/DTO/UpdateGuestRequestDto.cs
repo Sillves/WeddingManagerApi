@@ -1,13 +1,10 @@
 using WeddingManager.Domain.Enums;
 
-namespace WeddingManager.Domain.Entities;
+namespace WeddingManager.Domain.DTO;
 
-public class Guest
+public class UpdateGuestRequestDto
 {
-    public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public RsvpStatus RsvpStatus { get; set; } = RsvpStatus.Pending;
-    public Guid WeddingId { get; set; }
-    public Wedding Wedding { get; set; } = null!;
 }

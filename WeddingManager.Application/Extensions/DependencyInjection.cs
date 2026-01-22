@@ -12,6 +12,8 @@ public static class DependencyInjection
         // Add application services here as they are created
         services.AddScoped<IWeddingService, WeddingService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IGuestService, GuestService>();
+        services.AddScoped<IWeddingUserService, WeddingUserService>();
         services.AddAutoMapper(cfg => 
         {
             cfg.AddProfile<MappingProfile>();

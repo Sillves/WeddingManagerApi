@@ -5,18 +5,11 @@ using WeddingManager.Infrastructure.Data;
 
 namespace WeddingManager.Infrastructure.Repositories;
 
-public class WeddingRepository : IWeddingRepository
+public class WeddingRepository(WeddingDbContext context) : IWeddingRepository
 {
-    private readonly WeddingDbContext _context;
-
-    public WeddingRepository(WeddingDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<IEnumerable<Wedding>> GetAllAsync(Guid userId)
     {
-        return await _context.Weddings
+        return await context.Weddings
             .Where(w => w.UserId == userId)
             .Include(w => w.User) // Include navigation properties
             .ToListAsync();
@@ -24,7 +17,7 @@ public class WeddingRepository : IWeddingRepository
 
     public async Task<Wedding?> GetByIdAsync(Guid id)
     {
-        return await _context.Weddings
+        return await context.Weddings
             .Include(w => w.User)
             .Include(w => w.Guests)
             .Include(w => w.Pages)
@@ -34,23 +27,23 @@ public class WeddingRepository : IWeddingRepository
 
     public async Task AddAsync(Wedding wedding)
     {
-        await _context.Weddings.AddAsync(wedding);
-        await _context.SaveChangesAsync();
+        await context.Weddings.AddAsync(wedding);
+        await context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Wedding wedding)
     {
-        _context.Weddings.Update(wedding);
-        await _context.SaveChangesAsync();
+        context.Weddings.Update(wedding);
+        await context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var wedding = await _context.Weddings.FindAsync(id);
+        var wedding = await context.Weddings.FindAsync(id);
         if (wedding != null)
         {
-            _context.Weddings.Remove(wedding);
-            await _context.SaveChangesAsync();
+            context.Weddings.Remove(wedding);
+            await context.SaveChangesAsync();
         }
     }
 }

@@ -11,8 +11,16 @@ public class MappingProfile : Profile
         // Wedding mappings
         CreateMap<Wedding, WeddingDto>()
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId));
-        
         CreateMap<CreateWeddingRequestDto, Wedding>();
+        
+        // Guest mappings
+        CreateMap<Guest, GuestDto>();
+        CreateMap<CreateGuestRequestDto, Guest>();
+        CreateMap<UpdateGuestRequestDto, Guest>();
+        
+        CreateMap<WeddingUser, WeddingUserDto>()
+            .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User.Email))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"));
         
     }
 }

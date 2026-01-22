@@ -4,19 +4,12 @@ using WeddingManager.Domain.Interfaces;
 
 namespace WeddingManager.Infrastructure.Services;
 
-public class UserContextService : IUserContextService
+public class UserContextService(IHttpContextAccessor httpContextAccessor) : IUserContextService
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public UserContextService(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
-    
     public Guid GetUserId()
     {
-        var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier) 
-                          ?? _httpContextAccessor.HttpContext?.User.FindFirst("sub");
+        var userIdClaim = httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier) 
+                          ?? httpContextAccessor.HttpContext?.User.FindFirst("sub");
 
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
         {
@@ -27,11 +20,11 @@ public class UserContextService : IUserContextService
 
     public string GetUserEmail()
     {
-        var emailClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email) 
-                         ?? _httpContextAccessor.HttpContext?.User.FindFirst("email");
+        var emailClaim = httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Email) 
+                         ?? httpContextAccessor.HttpContext?.User.FindFirst("email");
         
         return emailClaim == null ? throw new InvalidOperationException("User email claim not found.") : emailClaim.Value;
     }
     
-    public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
+    public bool IsAuthenticated => httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
 }

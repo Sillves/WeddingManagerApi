@@ -1,28 +1,18 @@
-﻿using System.Reflection;
-using WeddingManager.Domain.Entities;
+﻿using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
 
 namespace WeddingManager.Application.Services;
 
-public class WeddingService : IWeddingService
+public class WeddingService(IWeddingRepository repository, IUserContextService userContextService) : IWeddingService
 {
-    private readonly IWeddingRepository _repository;
-    private readonly IUserContextService _userContextService;
-
-    public WeddingService(IWeddingRepository repository, IUserContextService userContextService)
-    {
-        _repository = repository;
-        _userContextService = userContextService;
-    }
-    
-    public async Task<Wedding?> GetByIdAsync(Guid id) => await _repository.GetByIdAsync(id);
-    public async Task UpdateAsync(Wedding wedding) => await _repository.UpdateAsync(wedding);
-    public async Task DeleteAsync(Guid id) => await _repository.DeleteAsync(id);
+    public async Task<Wedding?> GetByIdAsync(Guid id) => await repository.GetByIdAsync(id);
+    public async Task UpdateAsync(Wedding wedding) => await repository.UpdateAsync(wedding);
+    public async Task DeleteAsync(Guid id) => await repository.DeleteAsync(id);
     
     public async Task<IEnumerable<Wedding>> GetAllAsync()
     {
-        var userId = _userContextService.GetUserId();
-        return await _repository.GetAllAsync(userId);
+        var userId = userContextService.GetUserId();
+        return await repository.GetAllAsync(userId);
     }
 
     public async Task AddAsync(Wedding wedding)
@@ -30,12 +20,12 @@ public class WeddingService : IWeddingService
         wedding.Id = Guid.NewGuid();
         if (wedding.UserId == Guid.Empty)
         {
-            wedding.UserId = _userContextService.GetUserId();
+            wedding.UserId = userContextService.GetUserId();
         }
         
         wedding.Slug = GenerateSlug(wedding.Title);
         
-        await _repository.AddAsync(wedding);
+        await repository.AddAsync(wedding);
     }
     
     private static string GenerateSlug(string title)
