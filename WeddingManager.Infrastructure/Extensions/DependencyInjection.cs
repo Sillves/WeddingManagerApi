@@ -7,6 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Infrastructure.Data;
 using WeddingManager.Infrastructure.Repositories;
+using WeddingManager.Infrastructure.Services;
+
 namespace WeddingManager.Infrastructure.Extensions;
 
 public static class DependencyInjection
@@ -15,7 +17,10 @@ public static class DependencyInjection
     {
         services.AddDbContext<WeddingDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+        services.AddHttpContextAccessor();
         
+        services.AddScoped<IUserContextService, UserContextService>();
+
         services.AddIdentityConfiguration();
         
         var jwtKey = configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");

@@ -14,9 +14,10 @@ public class WeddingRepository : IWeddingRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Wedding>> GetAllAsync()
+    public async Task<IEnumerable<Wedding>> GetAllAsync(Guid userId)
     {
         return await _context.Weddings
+            .Where(w => w.UserId == userId)
             .Include(w => w.User) // Include navigation properties
             .ToListAsync();
     }

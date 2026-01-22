@@ -1,6 +1,6 @@
-﻿namespace WeddingManager.Web.Models;
+﻿namespace WeddingManager.Domain.DTO;
 
-public class CreateWeddingRequest
+public class CreateWeddingRequestDto
 {
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
