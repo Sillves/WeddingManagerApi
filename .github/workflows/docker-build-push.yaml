@@ -11,6 +11,7 @@ env:
   REGISTRY: rg.fr-par.scw.cloud
   NAMESPACE: amare-wedding
   IMAGE_NAME: api
+  SCALEWAY_SECRET_KEY
 
 jobs:
   build-and-push:
@@ -31,7 +32,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: nologin
-          password: ${{ secrets.SCW_SECRET_KEY }}
+          password: ${{ secrets.SCALEWAY_SECRET_KEY }}
 
       - name: Extract metadata
         id: meta
