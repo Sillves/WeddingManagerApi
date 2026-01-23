@@ -25,7 +25,11 @@ public static class ConfigurationExtensions
             {
                 options.ProjectId = Guid.Parse(Environment.GetEnvironmentVariable("SCW_DEFAULT_PROJECT_ID") ?? throw new InvalidOperationException("No default project ID found in environment variables"));
                 options.EnableCaching(TimeSpan.FromMinutes(15));
-                options.UseCli();
+                options.UseCredentials(
+                    Environment.GetEnvironmentVariable("SCW_SECRET_KEY") ?? throw new InvalidOperationException("SCW_SECRET_KEY not found"),
+                    Environment.GetEnvironmentVariable("SCW_REGION") ?? "fr-par",
+                    Environment.GetEnvironmentVariable("SCW_DEFAULT_ORGANIZATION_ID") ?? throw new InvalidOperationException("SCW_DEFAULT_ORGANIZATION_ID not found")
+                );            
             });
         }
 
