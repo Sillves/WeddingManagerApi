@@ -1,19 +1,29 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using LodeKennes.Extensions.Scaleway.SecretManager;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using WeddingManager.Domain.Utils;
+using WeddingManager.Web.Json;
+using WeddingManager.Web.Validation;
 
 namespace WeddingManager.Web.Extensions;
 
 public static class ConfigurationExtensions
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString,
+        Converters = { new BoolStringJsonConverter() }
+    };
+
     public static IConfiguration ConfigureAppConfiguration(this WebApplicationBuilder builder)
     {
         if (!builder.Environment.IsDevelopment())
         {
             builder.Configuration.AddScalewayCliSecrets(options =>
             {
-                options.ProjectId = Guid.Parse(Environment.GetEnvironmentVariable("SCW_DEFAULT_PROJECT_ID"));
+                options.ProjectId = Guid.Parse(Environment.GetEnvironmentVariable("SCW_DEFAULT_PROJECT_ID") ?? throw new InvalidOperationException("No default project ID found in environment variables"));
                 options.EnableCaching(TimeSpan.FromMinutes(15));
                 options.UseCli();
             });
@@ -22,31 +32,90 @@ public static class ConfigurationExtensions
         return builder.Configuration;
     }
 
-    public static IServiceCollection AddDatabaseSettings(
-        this IServiceCollection services,
-        IConfiguration configuration,
-        bool isDevelopment)
+    extension(IServiceCollection services)
     {
-        if (isDevelopment)
+        public IServiceCollection AddDatabaseSettings(IConfiguration configuration,
+            bool isDevelopment)
         {
-            services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
-        }
-        else
-        {
-            services.Configure<DatabaseSettings>(options =>
+            if (isDevelopment)
             {
-                options.ConnectionString = configuration["DatabaseSettings__ConnectionString"];
-            });
-        }
-
-        services.PostConfigure<DatabaseSettings>(options =>
-        {
-            if (string.IsNullOrWhiteSpace(options.ConnectionString))
-            {
-                throw new InvalidOperationException("No database connection string provided");
+                services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
             }
-        });
+            else
+            {
+                services.Configure<DatabaseSettings>(options =>
+                {
+                    options.ConnectionString = configuration["DatabaseSettings__ConnectionString"] ?? throw new InvalidOperationException("No database connection string provided");
+                });
+            }
 
-        return services;
+            services.PostConfigure<DatabaseSettings>(options =>
+            {
+                if (string.IsNullOrWhiteSpace(options.ConnectionString))
+                {
+                    throw new InvalidOperationException("No database connection string provided");
+                }
+            });
+
+            return services;
+        }
+
+        public IServiceCollection AddSmtpSettings(IConfiguration configuration, bool isDevelopment)
+        {
+            if (isDevelopment)
+            {
+                services.Configure<SmtpSettings>(configuration.GetSection(nameof(SmtpSettings)));
+            }
+            else
+            {
+                var json = configuration[nameof(SmtpSettings)]
+                           ?? throw new InvalidOperationException("No SMTP settings provided");
+
+                var smtpSettings = JsonSerializer.Deserialize<SmtpSettings>(
+                    json,
+                    JsonOptions
+                ) ?? throw new InvalidOperationException("Invalid SMTP settings JSON");
+                
+                services.Configure<SmtpSettings>(options =>
+                {
+                    options.Host = smtpSettings.Host;
+                    options.Port = smtpSettings.Port;
+                    options.UseSsl = smtpSettings.UseSsl;
+                    options.Username = smtpSettings.Username;
+                    options.Password = smtpSettings.Password;
+                    options.FromAddress = smtpSettings.FromAddress;
+                });
+            }
+            services.AddSingleton<IValidateOptions<SmtpSettings>, SmtpSettingsValidator>();
+
+            return services;
+        }
+        
+        public IServiceCollection AddJwtSettings(IConfiguration configuration, bool isDevelopment)
+        {
+            if (isDevelopment)
+            {
+                services.Configure<JwtSettings>(configuration.GetSection(nameof(JwtSettings)));
+            }
+            else
+            {
+                var json = configuration[nameof(JwtSettings)] ?? throw new InvalidOperationException("No JWT settings provided");
+                
+                var jwtSettings = JsonSerializer.Deserialize<JwtSettings>(
+                    json,
+                    JsonOptions
+                    ) ?? throw new InvalidOperationException("Invalid JWT settings JSON");
+                
+                services.Configure<JwtSettings>(options =>
+                {
+                    options.Key = jwtSettings.Key;
+                    options.Issuer = jwtSettings.Issuer;
+                    options.Audience = jwtSettings.Audience;
+                    options.ExpireDays = jwtSettings.ExpireDays;
+                });
+            }
+            services.AddSingleton<IValidateOptions<JwtSettings>, JwtSettingsValidator>();
+            return services;
+        }
     }
 }

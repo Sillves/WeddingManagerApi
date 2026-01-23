@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WeddingManager.Domain.Entities;
-using WeddingManager.Domain.Enums;
 
 namespace WeddingManager.Infrastructure.Data.Configurations;
 

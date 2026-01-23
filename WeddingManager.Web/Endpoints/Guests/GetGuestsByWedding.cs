@@ -1,5 +1,4 @@
 using WeddingManager.Domain.Interfaces;
-using WeddingManager.Web.Endpoints;
 using WeddingManager.Web.Authorization;
 
 namespace WeddingManager.Web.Endpoints.Guests;

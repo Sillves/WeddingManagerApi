@@ -1,4 +1,4 @@
-namespace WeddingManager.Infrastructure.Services;
+namespace WeddingManager.Domain.Utils;
 
 public class EmailSettings
 {

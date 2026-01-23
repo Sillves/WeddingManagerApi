@@ -8,7 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 var isDevelopment = builder.Environment.IsDevelopment();
 var configuration = builder.ConfigureAppConfiguration();
+
 builder.Services.AddDatabaseSettings(configuration, isDevelopment);
+builder.Services.AddSmtpSettings(configuration, isDevelopment);
+builder.Services.AddJwtSettings(configuration, isDevelopment);
 
 // Add services to the container.
 builder.Services.AddApplication();

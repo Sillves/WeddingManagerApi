@@ -4,36 +4,35 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Utils;
 
 namespace WeddingManager.Infrastructure.Services;
 
 public class SmtpEmailService(IOptions<EmailSettings> settings, ILogger<SmtpEmailService> logger)
     : IEmailService
 {
-    private readonly EmailSettings settings = settings.Value;
+    private readonly EmailSettings _settings = settings.Value;
 
     public async Task SendRsvpConfirmationAsync(Guest guest, Wedding wedding)
     {
-        if (!settings.IsConfigured())
+        if (!_settings.IsConfigured())
         {
             logger.LogInformation("Email settings not configured; skipping RSVP confirmation email.");
             return;
         }
 
-        using var message = new MailMessage(settings.FromAddress, guest.Email)
-        {
-            Subject = $"RSVP confirmation for {wedding.Title}",
-            Body = BuildBody(guest, wedding)
-        };
+        using var message = new MailMessage(_settings.FromAddress, guest.Email);
+        
+        message.Subject = $"RSVP confirmation for {wedding.Title}";
+        message.Body = BuildBody(guest, wedding);
 
-        using var client = new SmtpClient(settings.Host, settings.Port)
-        {
-            EnableSsl = settings.UseSsl
-        };
+        using var client = new SmtpClient(_settings.Host, _settings.Port);
+        
+        client.EnableSsl = _settings.UseSsl;
 
-        if (!string.IsNullOrWhiteSpace(settings.Username))
+        if (!string.IsNullOrWhiteSpace(_settings.Username))
         {
-            client.Credentials = new NetworkCredential(settings.Username, settings.Password);
+            client.Credentials = new NetworkCredential(_settings.Username, _settings.Password);
         }
 
         await client.SendMailAsync(message);
