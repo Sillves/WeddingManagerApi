@@ -2,12 +2,17 @@ using System.Text.Json.Serialization;
 using WeddingManager.Application.Extensions;
 using WeddingManager.Infrastructure.Extensions;
 using WeddingManager.Web.Endpoints;
+using WeddingManager.Web.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var isDevelopment = builder.Environment.IsDevelopment();
+var configuration = builder.ConfigureAppConfiguration();
+builder.Services.AddDatabaseSettings(configuration, isDevelopment);
+
 // Add services to the container.
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(configuration);
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

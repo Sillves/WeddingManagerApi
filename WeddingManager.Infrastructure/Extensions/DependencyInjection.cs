@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Utils;
 using WeddingManager.Infrastructure.Data;
 using WeddingManager.Infrastructure.Repositories;
 using WeddingManager.Infrastructure.Services;
@@ -15,8 +17,13 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<WeddingDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+        // Inject IOptions<DatabaseSettings> in DbContext
+        services.AddDbContext<WeddingDbContext>((serviceProvider, options) =>
+        {
+            var dbSettings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>();
+            options.UseNpgsql(dbSettings.Value.ConnectionString);
+        });
+
         services.AddHttpContextAccessor();
         
         services.AddScoped<IUserContextService, UserContextService>();
