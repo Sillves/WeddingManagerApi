@@ -1,0 +1,16 @@
+meta {
+  name: GetGuestsByWeddingId
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/weddings/9a61b584-2590-4555-9fde-ab58b7fb9b92/guests
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

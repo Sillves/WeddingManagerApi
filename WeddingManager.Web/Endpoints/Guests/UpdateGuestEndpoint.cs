@@ -1,5 +1,6 @@
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Authorization;
 
 namespace WeddingManager.Web.Endpoints.Guests;
 
@@ -28,6 +29,7 @@ public class UpdateGuestEndpoint : IEndpoint
             .WithName("UpdateGuest")
             .WithOpenApi()
             .RequireAuthorization()
+            .AddEndpointFilter<RequireGuestAccessFilter>()
             .Produces(200)
             .Produces(400)
             .Produces(403)

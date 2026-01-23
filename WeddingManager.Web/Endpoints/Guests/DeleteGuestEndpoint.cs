@@ -1,4 +1,5 @@
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Endpoints;
 
 namespace WeddingManager.Web.Endpoints.Guests;
@@ -28,6 +29,7 @@ public class DeleteGuestEndpoint : IEndpoint
             .WithName("DeleteGuest")
             .WithOpenApi()
             .RequireAuthorization()
+            .AddEndpointFilter<RequireGuestAccessFilter>()
             .Produces(204)
             .Produces(403)
             .Produces(404);

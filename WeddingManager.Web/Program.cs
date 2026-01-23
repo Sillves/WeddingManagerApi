@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using WeddingManager.Application.Extensions;
 using WeddingManager.Infrastructure.Extensions;
 using WeddingManager.Web.Endpoints;
@@ -13,6 +14,10 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var app = builder.Build();
 

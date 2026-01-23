@@ -6,12 +6,17 @@ meta {
 
 post {
   url: {{baseUrl}}/auth/register
-  body: none
+  body: json
   auth: inherit
 }
 
-vars:pre-request {
-  baseUrl: http://localhost:5072
+body:json {
+  {
+    "email": "Sara@hotmail.com",
+    "firstName": "Sara", 
+    "lastName": "Cleymans",
+    "password": "SaraMoelans123"
+  }
 }
 
 settings {

@@ -4,7 +4,7 @@ using WeddingManager.Web.Authorization;
 
 namespace WeddingManager.Web.Endpoints.Guests;
 
-public class GetGuestsByWeddingEndpoint : IEndpoint
+public class GetGuestsByWedding : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {

@@ -1,0 +1,24 @@
+meta {
+  name: SubmitRsvp
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/weddings/{{weddingId}}/rsvp
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Alex Guest",
+    "email": "Enola.Dare@yahoo.com",
+    "rsvpStatus": "Accepted"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

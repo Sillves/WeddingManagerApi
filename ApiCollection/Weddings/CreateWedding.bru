@@ -18,6 +18,14 @@ body:json {
   }
 }
 
+script:post-response {
+  const response = res.getBody();
+  if (response.id) {
+    bru.setEnvVar("weddingId", response.id);
+    console.log("✓ Token saved");
+  }
+}
+
 settings {
   encodeUrl: true
   timeout: 0

@@ -29,6 +29,18 @@ public static class GuestValidation
             throw new ArgumentException("Guest email is not valid");
     }
 
+    public static void ValidateInput(RsvpSubmitRequestDto requestDto)
+    {
+        if (string.IsNullOrWhiteSpace(requestDto.Name))
+            throw new ArgumentException("Guest name is required");
+
+        if (string.IsNullOrWhiteSpace(requestDto.Email))
+            throw new ArgumentException("Guest email is required");
+
+        if (!IsValidEmail(requestDto.Email))
+            throw new ArgumentException("Guest email is not valid");
+    }
+
     private static bool IsValidEmail(string email)
     {
         try

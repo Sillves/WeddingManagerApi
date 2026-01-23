@@ -8,6 +8,8 @@ namespace WeddingManager.Application.Services;
 
 public class GuestService(
     IGuestRepository guestRepository,
+    IWeddingRepository weddingRepository,
+    IEmailService emailService,
     IMapper mapper)
     : IGuestService
 {
@@ -72,5 +74,27 @@ public class GuestService(
             ?? throw new ArgumentException($"Guest with id {guestId} not found");
 
         await guestRepository.DeleteAsync(guestId);
+    }
+
+    public async Task<GuestDto?> SubmitRsvpAsync(Guid weddingId, RsvpSubmitRequestDto requestDto)
+    {
+        GuestValidation.ValidateInput(requestDto);
+
+        var guest = await guestRepository.GetByEmailAsync(weddingId, requestDto.Email);
+        if (guest == null)
+            return null;
+
+        guest.Name = requestDto.Name;
+        guest.RsvpStatus = requestDto.RsvpStatus;
+
+        await guestRepository.UpdateAsync(guest);
+
+        var wedding = await weddingRepository.GetByIdAsync(weddingId);
+        if (wedding != null)
+        {
+            await emailService.SendRsvpConfirmationAsync(guest, wedding);
+        }
+
+        return mapper.Map<GuestDto>(guest);
     }
 }

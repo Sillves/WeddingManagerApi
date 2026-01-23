@@ -1,5 +1,6 @@
 
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Endpoints;
 
 namespace WeddingManager.Web.Endpoints.Guests;
@@ -27,6 +28,7 @@ public class GetGuestEndpoint : IEndpoint
             .WithName("GetGuest")
             .WithOpenApi()
             .RequireAuthorization()
+            .AddEndpointFilter<RequireGuestAccessFilter>()
             .Produces(200)
             .Produces(403)
             .Produces(404);
