@@ -1,0 +1,34 @@
+stages:
+  - build
+
+variables:
+  REGISTRY: rg.fr-par.scw.cloud
+  NAMESPACE: amare-wedding
+  IMAGE_NAME: api
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  FULL_IMAGE_NAME: $REGISTRY/$NAMESPACE/$IMAGE_NAME
+
+build-and-push:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  only:
+    - main
+    - develop
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $FULL_IMAGE_NAME:$IMAGE_TAG -t $FULL_IMAGE_NAME:latest .
+    
+    - echo "Logging into Scaleway registry..."
+    - echo $SCW_SECRET_KEY | docker login $REGISTRY -u nologin --password-stdin
+    
+    - echo "Pushing image to registry..."
+    - docker push $FULL_IMAGE_NAME:$IMAGE_TAG
+    - docker push $FULL_IMAGE_NAME:latest
+    
+    - echo "Image pushed successfully: $FULL_IMAGE_NAME:$IMAGE_TAG"
+  after_script:
+    - docker logout $REGISTRY
+  tags:
+    - docker
