@@ -1,3 +1,4 @@
+using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 
@@ -18,7 +19,8 @@ public class GetGuestsByWedding : IEndpoint
             .WithOpenApi()
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
-            .Produces(200)
+            .Produces<IEnumerable<GuestDto>>(200)
+            .Produces(401)
             .Produces(403)
             .Produces(404);
     }

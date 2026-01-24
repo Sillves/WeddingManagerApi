@@ -30,6 +30,7 @@ public class DeleteGuestEndpoint : IEndpoint
             .RequireAuthorization()
             .AddEndpointFilter<RequireGuestAccessFilter>()
             .Produces(204)
+            .Produces(401)
             .Produces(403)
             .Produces(404);
     }

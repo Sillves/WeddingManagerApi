@@ -30,8 +30,9 @@ public class UpdateGuestEndpoint : IEndpoint
             .WithOpenApi()
             .RequireAuthorization()
             .AddEndpointFilter<RequireGuestAccessFilter>()
-            .Produces(200)
+            .Produces<GuestDto>(200)
             .Produces(400)
+            .Produces(401)
             .Produces(403)
             .Produces(404);
     }

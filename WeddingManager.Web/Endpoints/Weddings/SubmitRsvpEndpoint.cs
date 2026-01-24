@@ -25,7 +25,7 @@ public class SubmitRsvpEndpoint : IEndpoint
             .WithTags("Weddings")
             .WithName("SubmitRsvp")
             .WithOpenApi()
-            .Produces(200)
+            .Produces<GuestDto>(200)
             .Produces(400)
             .Produces(404);
     }

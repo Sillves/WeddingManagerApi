@@ -28,6 +28,7 @@ public class RemoveWeddingUserEndpoint : IEndpoint
             .WithOpenApi()
             .RequireAuthorization()
             .Produces(204)
+            .Produces(401)
             .Produces(403)
             .Produces(404);
     }

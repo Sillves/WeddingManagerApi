@@ -14,6 +14,9 @@ public class DeleteWeddingEndpoint : IEndpoint
         .WithTags("Weddings")
         .WithName("DeleteWedding")
         .WithOpenApi()
-        .RequireAuthorization();
+        .RequireAuthorization()
+        .Produces(204)
+        .Produces(401)
+        .Produces(404);
     }
 }

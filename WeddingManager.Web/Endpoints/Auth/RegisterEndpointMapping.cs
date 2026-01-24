@@ -1,4 +1,6 @@
+using System.Net;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Auth;
@@ -16,13 +18,14 @@ public class RegisterEndpoint : IEndpoint
                 request.Password);
 
             if (!result.Success)
-                return Results.BadRequest(new AuthResponse(false, result.Message));
+                return Results.BadRequest(result);
 
-            return Results.Created($"/api/users/{result.UserId}", 
-                new AuthResponse(true, result.Message, UserId: result.UserId));
+            return Results.Created(string.Empty, result);
         })
         .WithTags("Auth")
         .WithName("Register")
-        .WithOpenApi();
+        .WithOpenApi()
+        .Produces<AuthResult>((int)HttpStatusCode.Created)
+        .Produces<AuthResult>((int)HttpStatusCode.BadRequest);
     }
 }

@@ -1,3 +1,4 @@
+using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
 
 namespace WeddingManager.Web.Endpoints.WeddingUsers;
@@ -27,7 +28,8 @@ public class GetWeddingUsersEndpoint : IEndpoint
             .WithName("GetWeddingUsers")
             .WithOpenApi()
             .RequireAuthorization()
-            .Produces(200)
+            .Produces<IEnumerable<WeddingUserDto>>(200)
+            .Produces(401)
             .Produces(403)
             .Produces(404);
     }

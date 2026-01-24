@@ -34,8 +34,9 @@ public class CreateGuestEndpoint : IEndpoint
             .WithOpenApi()
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
-            .Produces(201)
+            .Produces<GuestDto>(201)
             .Produces(400)
+            .Produces(401)
             .Produces(403);
     }
 }

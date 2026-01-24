@@ -19,6 +19,8 @@ public class CreateWedding : IEndpoint
         .WithTags("Weddings")
         .WithName("CreateWedding")
         .WithOpenApi()
-        .RequireAuthorization();
+        .RequireAuthorization()
+        .Produces<Wedding>(201)
+        .Produces(401);
     }
 }

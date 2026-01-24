@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 using WeddingManager.Domain.Utils;
 
 namespace WeddingManager.Application.Services;
@@ -14,7 +15,7 @@ namespace WeddingManager.Application.Services;
 public class AuthService(UserManager<User> userManager, IOptions<JwtSettings> jwtOptions, ILogger<AuthService> logger) : IAuthService
 {
 
-    public async Task<(bool Success, string Message, Guid? UserId)> RegisterAsync(string email, string firstName, string lastName, string password)
+    public async Task<AuthResult> RegisterAsync(string email, string firstName, string lastName, string password)
     {
         var user = new User
         {
@@ -29,22 +30,23 @@ public class AuthService(UserManager<User> userManager, IOptions<JwtSettings> jw
         if (!result.Succeeded)
         {
             var error = result.Errors.FirstOrDefault()?.Description ?? "Registration failed";
-            return (false, error, null);
+            return new AuthResult { Success = false, Message = error, Token = null };
         }
 
-        return (true, "Registered successfully", user.Id);
+        var token = GenerateJwtToken(user);
+        return new AuthResult { Success = true, Message = "Registered successfully", Token = token };
     }
 
-    public async Task<(bool Success, string Message, string? Token)> LoginAsync(string email, string password)
+    public async Task<AuthResult> LoginAsync(string email, string password)
     {
         var user = await userManager.FindByEmailAsync(email);
         if (user == null || !await userManager.CheckPasswordAsync(user, password))
         {
-            return (false, "Invalid credentials", null);
+            return new AuthResult { Success = false, Message = "Invalid credentials", Token = null };
         }
 
         var token = GenerateJwtToken(user);
-        return (true, "Login successful", token);
+        return new AuthResult { Success = true, Message = "Login successful", Token = token };
     }
 
     private string GenerateJwtToken(User user)

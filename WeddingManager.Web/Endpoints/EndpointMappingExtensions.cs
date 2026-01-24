@@ -5,8 +5,11 @@ namespace WeddingManager.Web.Endpoints;
 
 public static class EndpointMappingExtensions
 {
-    public static IEndpointRouteBuilder MapAllEndpoints(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapAllEndpoints(this IEndpointRouteBuilder app, bool useApiPrefix = false)
     {
+        // Conditionally create a route group with /api prefix
+        var routeBuilder = useApiPrefix ? app.MapGroup("/api") : app;
+        
         // 1. Find all types in the current assembly
         var endpointTypes = Assembly.GetExecutingAssembly()
             .GetTypes()
@@ -16,7 +19,7 @@ public static class EndpointMappingExtensions
         foreach (var type in endpointTypes)
         {
             var endpoint = (IEndpoint)Activator.CreateInstance(type)!;
-            endpoint.MapEndpoint(app);
+            endpoint.MapEndpoint(routeBuilder);
         }
 
         return app;
