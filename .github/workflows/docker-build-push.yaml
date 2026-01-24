@@ -1,4 +1,4 @@
-name: Docker Build & Push
+name: Docker Build, Push & Deploy
 
 on:
   push:
@@ -57,3 +57,83 @@ jobs:
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
+
+  deploy-to-vps:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+
+    steps:
+      - name: Wait for registry propagation
+        run: |
+          echo "⏳ Waiting 15 seconds for Scaleway registry to propagate..."
+          sleep 15
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            cd /app
+            
+            # Retry logic for pulling images
+            MAX_RETRIES=3
+            RETRY_COUNT=0
+            RETRY_DELAY=10
+            
+            echo "🔄 Pulling latest images with retry logic..."
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              if docker-compose pull; then
+                echo "✅ Images pulled successfully"
+                break
+              else
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                  echo "⚠️  Pull failed, retry $RETRY_COUNT/$MAX_RETRIES in ${RETRY_DELAY}s..."
+                  sleep $RETRY_DELAY
+                else
+                  echo "❌ Pull failed after $MAX_RETRIES attempts"
+                  exit 1
+                fi
+              fi
+            done
+            
+            # Bring up containers with secrets injected
+            export SCW_SECRET_KEY="${{ secrets.SCALEWAY_SECRET_KEY }}"
+            export SCW_DEFAULT_ORGANIZATION_ID="${{ secrets.SCALEWAY_DEFAULT_ORGANIZATION_ID }}"
+            export SCW_DEFAULT_PROJECT_ID="${{ secrets.SCALEWAY_PROJECT_ID }}"
+            export SCW_REGION="fr-par"
+            
+            echo "🚀 Starting containers..."
+            docker-compose up -d
+            
+            # Wait for health checks
+            sleep 5
+            
+            # Verify deployment
+            echo "📊 Deployment status:"
+            docker-compose ps
+            
+            echo ""
+            echo "📋 API logs (last 20 lines):"
+            docker-compose logs api | tail -20
+
+      - name: Notify deployment
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "🌐 Application: https://amare.wedding"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check the logs above for details"
+          exit 1
