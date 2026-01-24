@@ -418,7 +418,7 @@ Key dependencies (see .csproj files):
 - `mcr.microsoft.com/dotnet/sdk:10.0` - Build stage
 - `mcr.microsoft.com/dotnet/aspnet:10.0` - Runtime stage
 - `nginx:alpine` - Reverse proxy
-- `postgres:15-alpine` - Database
+- `PostgreSQL-17` - Database
 
 ## Contributing
 
