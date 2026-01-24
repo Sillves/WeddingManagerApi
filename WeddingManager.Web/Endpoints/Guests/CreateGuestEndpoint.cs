@@ -8,7 +8,7 @@ public class CreateGuestEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/weddings/{weddingId}/guests", 
+        app.MapPost("/weddings/{weddingId}/guests", 
             async (Guid weddingId, CreateGuestRequestDto requestDto, IGuestService guestService) =>
             {
                 try

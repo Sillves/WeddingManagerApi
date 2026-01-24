@@ -8,7 +8,7 @@ public class GetGuestEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/guests/{guestId}", 
+        app.MapGet("/guests/{guestId}", 
             async (Guid guestId, IGuestService guestService) =>
             {
                 try

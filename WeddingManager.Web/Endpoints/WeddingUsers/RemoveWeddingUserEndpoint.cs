@@ -6,7 +6,7 @@ public class RemoveWeddingUserEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/api/weddings/{weddingId}/users/{userId}", 
+        app.MapDelete("/weddings/{weddingId}/users/{userId}", 
             async (Guid weddingId, Guid userId, IWeddingUserService weddingUserService) =>
             {
                 try

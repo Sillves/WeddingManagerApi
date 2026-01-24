@@ -7,7 +7,7 @@ public class AddWeddingUserEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/weddings/{weddingId}/users", 
+        app.MapPost("/weddings/{weddingId}/users", 
             async (Guid weddingId, AddWeddingUserRequestDto requestDto, IWeddingUserService weddingUserService) =>
             {
                 try

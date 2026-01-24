@@ -9,7 +9,7 @@ public class CreateWedding : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/weddings", async (CreateWeddingRequestDto requestDto, IWeddingService weddingService, IMapper mapper) =>
+        app.MapPost("/weddings", async (CreateWeddingRequestDto requestDto, IWeddingService weddingService, IMapper mapper) =>
         {
             var wedding = mapper.Map<Wedding>(requestDto);
 

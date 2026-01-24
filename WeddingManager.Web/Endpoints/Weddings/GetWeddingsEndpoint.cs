@@ -8,7 +8,7 @@ public class GetWeddings : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/weddings", async (IWeddingService weddingService, IMapper mapper) =>
+        app.MapGet("/weddings", async (IWeddingService weddingService, IMapper mapper) =>
         {
             var weddings = await weddingService.GetAllAsync();
             var dtos = mapper.Map<IEnumerable<WeddingDto>>(weddings);

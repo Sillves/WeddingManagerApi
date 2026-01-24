@@ -7,7 +7,7 @@ public class GetGuestsByWedding : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/weddings/{weddingId}/guests", 
+        app.MapGet("/weddings/{weddingId}/guests", 
             async (Guid weddingId, IGuestService guestService) =>
             {
                 var guests = await guestService.GetByWeddingIdAsync(weddingId);

@@ -6,7 +6,7 @@ public class DeleteWeddingEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/api/weddings/{id}", async (Guid id, IWeddingService weddingService) =>
+        app.MapDelete("/weddings/{id}", async (Guid id, IWeddingService weddingService) =>
         {
             await weddingService.DeleteAsync(id);
             return Results.NoContent();

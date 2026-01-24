@@ -7,7 +7,7 @@ public class SubmitRsvpEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/weddings/{id}/rsvp",
+        app.MapPost("/weddings/{id}/rsvp",
             async (Guid id, RsvpSubmitRequestDto requestDto, IGuestService guestService) =>
             {
                 try

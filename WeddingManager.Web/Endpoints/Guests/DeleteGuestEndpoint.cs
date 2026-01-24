@@ -7,7 +7,7 @@ public class DeleteGuestEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/api/guests/{guestId}", 
+        app.MapDelete("/guests/{guestId}", 
             async (Guid guestId, IGuestService guestService) =>
             {
                 try

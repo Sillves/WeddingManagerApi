@@ -8,7 +8,7 @@ public class UpdateGuestEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut("/api/guests/{guestId}", 
+        app.MapPut("/guests/{guestId}", 
             async (Guid guestId, UpdateGuestRequestDto requestDto, IGuestService guestService) =>
             {
                 try

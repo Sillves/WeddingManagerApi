@@ -7,7 +7,7 @@ public class RegisterEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/auth/register", async (RegisterRequest request, IAuthService authService) =>
+        app.MapPost("/auth/register", async (RegisterRequest request, IAuthService authService) =>
         {
             var result = await authService.RegisterAsync(
                 request.Email, 
