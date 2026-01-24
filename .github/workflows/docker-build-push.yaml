@@ -5,6 +5,14 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - 'WeddingManager.Web/**'
+      - 'WeddingManager.Application/**'
+      - 'WeddingManager.Infrastructure/**'
+      - 'WeddingManager.Domain/**'
+      - 'Dockerfile'
+      - '.github/workflows/docker-build-push.yml'
+      - '!**.md'
   workflow_dispatch:
 
 env:
