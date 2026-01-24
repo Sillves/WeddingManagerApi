@@ -2,15 +2,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Utils;
 
 namespace WeddingManager.Application.Services;
 
-public class AuthService(UserManager<User> userManager, IConfiguration configuration, ILogger<AuthService> logger) : IAuthService
+public class AuthService(UserManager<User> userManager, IOptions<JwtSettings> jwtOptions, ILogger<AuthService> logger) : IAuthService
 {
 
     public async Task<(bool Success, string Message, Guid? UserId)> RegisterAsync(string email, string firstName, string lastName, string password)
@@ -48,6 +49,8 @@ public class AuthService(UserManager<User> userManager, IConfiguration configura
 
     private string GenerateJwtToken(User user)
     {
+        var jwtSettings = jwtOptions.Value;
+
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -57,13 +60,13 @@ public class AuthService(UserManager<User> userManager, IConfiguration configura
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not found")));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expires = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:ExpireDays"] ?? "7"));
+        var expires = DateTime.UtcNow.AddDays(jwtSettings.ExpireDays);
 
         var token = new JwtSecurityToken(
-            configuration["Jwt:Issuer"],
-            configuration["Jwt:Audience"],
+            jwtSettings.Issuer,
+            jwtSettings.Audience,
             claims,
             expires: expires,
             signingCredentials: creds

@@ -12,6 +12,7 @@ var configuration = builder.ConfigureAppConfiguration();
 builder.Services.AddDatabaseSettings(configuration, isDevelopment);
 builder.Services.AddSmtpSettings(configuration, isDevelopment);
 builder.Services.AddJwtSettings(configuration, isDevelopment);
+builder.Services.AddCorsPolicy(configuration, isDevelopment);
 
 // Add services to the container.
 builder.Services.AddApplication();
@@ -38,6 +39,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();

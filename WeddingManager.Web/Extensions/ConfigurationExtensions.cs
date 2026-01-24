@@ -104,12 +104,12 @@ public static class ConfigurationExtensions
             else
             {
                 var json = configuration[nameof(JwtSettings)] ?? throw new InvalidOperationException("No JWT settings provided");
-                
+
                 var jwtSettings = JsonSerializer.Deserialize<JwtSettings>(
                     json,
                     JsonOptions
                     ) ?? throw new InvalidOperationException("Invalid JWT settings JSON");
-                
+
                 services.Configure<JwtSettings>(options =>
                 {
                     options.Key = jwtSettings.Key;
@@ -119,6 +119,30 @@ public static class ConfigurationExtensions
                 });
             }
             services.AddSingleton<IValidateOptions<JwtSettings>, JwtSettingsValidator>();
+            return services;
+        }
+
+        public IServiceCollection AddCorsPolicy(IConfiguration configuration, bool isDevelopment)
+        {
+            // Only add CORS in development or if explicitly configured
+            var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+
+            if (isDevelopment || allowedOrigins is { Length: > 0 })
+            {
+                services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowFrontend", policy =>
+                    {
+                        var origins = allowedOrigins ?? ["http://localhost:5173"];
+
+                        policy.WithOrigins(origins)
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                    });
+                });
+            }
+
             return services;
         }
     }
