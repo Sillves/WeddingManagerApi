@@ -102,30 +102,30 @@ GET /health
 ```bash
 GET    /api/weddings              # Get all weddings for user
 POST   /api/weddings              # Create new wedding
-GET    /api/weddings/{id}         # Get specific wedding
-PUT    /api/weddings/{id}         # Update wedding
 DELETE /api/weddings/{id}         # Delete wedding
+POST   /api/weddings/{id}/rsvp    # Submit RSVP
 ```
 
 ### Guests
 ```bash
-GET    /api/guests/{weddingId}    # Get guests for wedding
-POST   /api/guests                # Add guest
-PUT    /api/guests/{id}           # Update guest
-DELETE /api/guests/{id}           # Remove guest
+GET    /api/weddings/{weddingId}/guests # Get guests for wedding
+POST   /api/weddings/{weddingId}/guests # Add guest to wedding
+GET    /api/guests/{guestId}            # Get guest by id
+PUT    /api/guests/{guestId}            # Update guest
+DELETE /api/guests/{guestId}            # Remove guest
 ```
 
-### RSVP
+### Wedding Users
 ```bash
-POST   /api/weddings/{id}/rsvp    # Submit RSVP
-GET    /api/weddings/{id}/rsvps   # Get all RSVPs
+GET    /api/weddings/{weddingId}/users   # Get wedding users
+POST   /api/weddings/{weddingId}/users   # Add user to wedding
+DELETE /api/weddings/{weddingId}/users/{userId} # Remove user from wedding
 ```
 
 ### Authentication
 ```bash
 POST   /api/auth/register         # Register new user
 POST   /api/auth/login            # Login user
-POST   /api/auth/logout           # Logout user
 ```
 
 ## Deployment
