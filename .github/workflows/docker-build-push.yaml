@@ -105,7 +105,16 @@ jobs:
           SCW_REGION: fr-par
           SCW_SECRET_NAME: DatabaseSettings__ConnectionString
         run: |
-          DB_CONN=$(scw secret version access name=$SCW_SECRET_NAME -o json | python3 - <<'PY'
+          SECRET_ID=$(scw secret list name=$SCW_SECRET_NAME -o json | python3 - <<'PY'
+          import json, sys
+          data = json.load(sys.stdin)
+          secrets = data.get("secrets", [])
+          if not secrets:
+              raise SystemExit("Secret not found")
+          print(secrets[0]["id"])
+          PY
+          )
+          DB_CONN=$(scw secret version access "$SECRET_ID" -o json | python3 - <<'PY'
           import json, sys, base64
           data = json.load(sys.stdin)
           print(base64.b64decode(data["data"]).decode("utf-8"))
