@@ -16,7 +16,6 @@ public class GetWeddings : IEndpoint
         })
         .WithTags("Weddings")
         .WithName("GetWeddings")
-        .WithOpenApi()
         .RequireAuthorization()
         .Produces<IEnumerable<WeddingDto>>(200)
         .Produces(401);

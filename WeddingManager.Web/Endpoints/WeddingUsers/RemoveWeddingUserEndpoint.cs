@@ -25,7 +25,6 @@ public class RemoveWeddingUserEndpoint : IEndpoint
             })
             .WithTags("WeddingUsers")
             .WithName("RemoveWeddingUser")
-            .WithOpenApi()
             .RequireAuthorization()
             .Produces(204)
             .Produces(401)

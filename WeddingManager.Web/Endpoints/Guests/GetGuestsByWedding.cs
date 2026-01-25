@@ -16,7 +16,6 @@ public class GetGuestsByWedding : IEndpoint
             })
             .WithTags("Guests")
             .WithName("GetGuestsByWedding")
-            .WithOpenApi()
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
             .Produces<IEnumerable<GuestDto>>(200)

@@ -30,7 +30,6 @@ public class AddWeddingUserEndpoint : IEndpoint
             })
             .WithTags("WeddingUsers")
             .WithName("AddWeddingUser")
-            .WithOpenApi()
             .RequireAuthorization()
             .Produces<WeddingUserDto>(201)
             .Produces(400)

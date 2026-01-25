@@ -20,7 +20,7 @@ public class CreateGuestEndpoint : IEndpoint
                 {
                     return Results.BadRequest(new { error = ex.Message });
                 }
-                catch (UnauthorizedAccessException ex)
+                catch (UnauthorizedAccessException)
                 {
                     return Results.Forbid();
                 }
@@ -31,7 +31,6 @@ public class CreateGuestEndpoint : IEndpoint
             })
             .WithTags("Guests")
             .WithName("CreateGuest")
-            .WithOpenApi()
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
             .Produces<GuestDto>(201)

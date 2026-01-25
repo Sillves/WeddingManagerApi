@@ -22,7 +22,6 @@ public class GetWeddingPublicEndpoint : IEndpoint
             })
             .WithTags("Weddings")
             .WithName("GetWeddingPublicInfo")
-            .WithOpenApi()
             .AllowAnonymous()
             .RequireRateLimiting("PublicWedding")
             .Produces<WeddingPublicDto>(200)

@@ -26,7 +26,6 @@ public class GetGuestEndpoint : IEndpoint
             })
             .WithTags("Guests")
             .WithName("GetGuest")
-            .WithOpenApi()
             .RequireAuthorization()
             .AddEndpointFilter<RequireGuestAccessFilter>()
             .Produces<GuestDto>(200)

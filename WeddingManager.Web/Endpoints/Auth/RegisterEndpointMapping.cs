@@ -24,7 +24,6 @@ public class RegisterEndpoint : IEndpoint
         })
         .WithTags("Auth")
         .WithName("Register")
-        .WithOpenApi()
         .Produces<AuthResult>((int)HttpStatusCode.Created)
         .Produces<AuthResult>((int)HttpStatusCode.BadRequest);
     }

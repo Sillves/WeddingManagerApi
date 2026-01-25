@@ -19,7 +19,6 @@ public class LoginEndpoint : IEndpoint
         })
         .WithTags("Auth")
         .WithName("Login")
-        .WithOpenApi()
         .Produces<AuthResult>(200)
         .Produces(401);
     }

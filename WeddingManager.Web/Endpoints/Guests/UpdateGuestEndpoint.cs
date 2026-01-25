@@ -27,7 +27,6 @@ public class UpdateGuestEndpoint : IEndpoint
             })
             .WithTags("Guests")
             .WithName("UpdateGuest")
-            .WithOpenApi()
             .RequireAuthorization()
             .AddEndpointFilter<RequireGuestAccessFilter>()
             .Produces<GuestDto>(200)

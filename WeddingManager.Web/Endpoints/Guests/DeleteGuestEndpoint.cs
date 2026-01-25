@@ -26,7 +26,6 @@ public class DeleteGuestEndpoint : IEndpoint
             })
             .WithTags("Guests")
             .WithName("DeleteGuest")
-            .WithOpenApi()
             .RequireAuthorization()
             .AddEndpointFilter<RequireGuestAccessFilter>()
             .Produces(204)
