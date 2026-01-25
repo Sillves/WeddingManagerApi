@@ -88,39 +88,18 @@ jobs:
           dotnet tool install --global dotnet-ef
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Set up Scaleway CLI
-        uses: scaleway/action-scw@v0
+      - name: Fetch DB connection string
+        uses: scaleway/action-scw-secret@v0
         with:
+          secret-names: |
+            DatabaseSettings__ConnectionString
           access-key: ${{ secrets.SCALEWAY_ACCESS_KEY }}
           secret-key: ${{ secrets.SCALEWAY_SECRET_KEY }}
-          default-organization-id: ${{ secrets.SCALEWAY_DEFAULT_ORGANIZATION_ID }}
           default-project-id: ${{ secrets.SCALEWAY_PROJECT_ID }}
+          default-organization-id: ${{ secrets.SCALEWAY_DEFAULT_ORGANIZATION_ID }}
 
-      - name: Fetch DB connection string
-        env:
-          SCW_ACCESS_KEY: ${{ secrets.SCALEWAY_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCALEWAY_SECRET_KEY }}
-          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCALEWAY_DEFAULT_ORGANIZATION_ID }}
-          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCALEWAY_PROJECT_ID }}
-          SCW_REGION: fr-par
-          SCW_SECRET_NAME: DatabaseSettings__ConnectionString
-        run: |
-          SECRET_ID=$(scw secret secret list name=$SCW_SECRET_NAME region=$SCW_REGION -o json | python3 - <<'PY'
-          import json, sys
-          data = json.load(sys.stdin)
-          secrets = data.get("secrets", [])
-          if not secrets:
-              raise SystemExit("Secret not found")
-          print(secrets[0]["id"])
-          PY
-          )
-          DB_CONN=$(scw secret version access "$SECRET_ID" region=$SCW_REGION -o json | python3 - <<'PY'
-          import json, sys, base64
-          data = json.load(sys.stdin)
-          print(base64.b64decode(data["data"]).decode("utf-8"))
-          PY
-          )
-          echo "DatabaseSettings__ConnectionString=$DB_CONN" >> "$GITHUB_ENV"
+      - name: Export DB connection string
+        run: echo "DatabaseSettings__ConnectionString=$DATABASESETTINGS__CONNECTIONSTRING" >> "$GITHUB_ENV"
 
       - name: Apply migrations
         run: |
