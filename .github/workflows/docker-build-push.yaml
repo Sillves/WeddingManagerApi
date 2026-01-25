@@ -101,10 +101,10 @@ jobs:
           SCW_SECRET_NAME: DatabaseSettings__ConnectionString
         run: |
           DB_CONN=$(scw secret version access name=$SCW_SECRET_NAME -o json | python3 - <<'PY'
-import json, sys, base64
-data = json.load(sys.stdin)
-print(base64.b64decode(data["data"]).decode("utf-8"))
-PY
+          import json, sys, base64
+          data = json.load(sys.stdin)
+          print(base64.b64decode(data["data"]).decode("utf-8"))
+          PY
           )
           echo "DatabaseSettings__ConnectionString=$DB_CONN" >> "$GITHUB_ENV"
 
