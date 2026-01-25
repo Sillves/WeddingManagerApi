@@ -25,6 +25,17 @@ public class WeddingRepository(WeddingDbContext context) : IWeddingRepository
             .FirstOrDefaultAsync(w => w.Id == id);
     }
 
+    public async Task<Wedding?> GetByIdOrSlugAsync(string idOrSlug)
+    {
+        var query = context.Weddings.AsNoTracking();
+        if (Guid.TryParse(idOrSlug, out var id))
+        {
+            return await query.FirstOrDefaultAsync(w => w.Id == id);
+        }
+
+        return await query.FirstOrDefaultAsync(w => w.Slug == idOrSlug);
+    }
+
     public async Task AddAsync(Wedding wedding)
     {
         await context.Weddings.AddAsync(wedding);

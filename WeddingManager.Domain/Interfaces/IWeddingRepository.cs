@@ -6,6 +6,7 @@ public interface IWeddingRepository
 {
     Task<IEnumerable<Wedding>> GetAllAsync(Guid userId);
     Task<Wedding?> GetByIdAsync(Guid id);
+    Task<Wedding?> GetByIdOrSlugAsync(string idOrSlug);
     Task AddAsync(Wedding wedding);
     Task UpdateAsync(Wedding wedding);
     Task DeleteAsync(Guid id);

@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using WeddingManager.Application.Extensions;
 using WeddingManager.Infrastructure.Extensions;
 using WeddingManager.Web.Endpoints;
@@ -23,10 +22,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-});
+builder.Services.AddPublicRateLimiting();
 
 var app = builder.Build();
 
@@ -40,6 +36,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UsePublicRateLimiting();
 
 app.UseAuthentication();
 app.UseAuthorization();

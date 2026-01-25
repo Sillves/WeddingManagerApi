@@ -11,6 +11,7 @@ public class MappingProfile : Profile
         // Wedding mappings
         CreateMap<Wedding, WeddingDto>()
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId));
+        CreateMap<Wedding, WeddingPublicDto>();
         CreateMap<CreateWeddingRequestDto, Wedding>();
         
         // Guest mappings

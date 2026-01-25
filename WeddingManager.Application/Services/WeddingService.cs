@@ -6,6 +6,7 @@ namespace WeddingManager.Application.Services;
 public class WeddingService(IWeddingRepository repository, IUserContextService userContextService) : IWeddingService
 {
     public async Task<Wedding?> GetByIdAsync(Guid id) => await repository.GetByIdAsync(id);
+    public async Task<Wedding?> GetByIdOrSlugAsync(string idOrSlug) => await repository.GetByIdOrSlugAsync(idOrSlug);
     public async Task UpdateAsync(Wedding wedding) => await repository.UpdateAsync(wedding);
     public async Task DeleteAsync(Guid id) => await repository.DeleteAsync(id);
     
