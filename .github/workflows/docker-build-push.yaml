@@ -98,6 +98,10 @@ jobs:
 
       - name: Fetch DB connection string
         env:
+          SCW_ACCESS_KEY: ${{ secrets.SCALEWAY_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCALEWAY_SECRET_KEY }}
+          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCALEWAY_PROJECT_ID }}
+          SCW_REGION: fr-par
           SCW_SECRET_NAME: DatabaseSettings__ConnectionString
         run: |
           DB_CONN=$(scw secret version access name=$SCW_SECRET_NAME -o json | python3 - <<'PY'
