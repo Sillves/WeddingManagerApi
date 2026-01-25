@@ -80,6 +80,22 @@ jobs:
           echo "⏳ Waiting 15 seconds for Scaleway registry to propagate..."
           sleep 15
 
+      - name: Fetch VPS public IP from Scaleway
+        env:
+          SCW_SECRET_KEY: ${{ secrets.SCALEWAY_SECRET_KEY }}
+          SCW_ZONE: ${{ secrets.SCALEWAY_ZONE }}
+          SCW_INSTANCE_ID: ${{ secrets.SCALEWAY_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          ip=$(curl -sS -H "X-Auth-Token: $SCW_SECRET_KEY" \
+            "https://api.scaleway.com/instance/v1/zones/${SCW_ZONE}/servers/${SCW_INSTANCE_ID}" \
+            | jq -r '.server.public_ip.address')
+          if [ -z "$ip" ] || [ "$ip" = "null" ]; then
+            echo "Failed to resolve public IP" >&2
+            exit 1
+          fi
+          echo "VPS_HOST=$ip" >> "$GITHUB_ENV"
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -87,7 +103,7 @@ jobs:
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCALEWAY_DEFAULT_ORGANIZATION_ID }}
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCALEWAY_PROJECT_ID }}
         with:
-          host: ${{ secrets.VPS_IP }}
+          host: ${{ env.VPS_HOST }}
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
