@@ -8,6 +8,10 @@ public class Guest
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public RsvpStatus RsvpStatus { get; set; } = RsvpStatus.Pending;
+    public string PreferredLanguage { get; set; } = "en";
+    public string? InvitationToken { get; set; }
+    public DateTime? InvitationTokenExpiresAt { get; set; }
+    public DateTime? InvitationSentAt { get; set; }
     public Guid WeddingId { get; set; }
     public Wedding Wedding { get; set; } = null!;
 }

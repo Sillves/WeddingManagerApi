@@ -15,6 +15,9 @@ public static class GuestValidation
 
         if (!IsValidEmail(requestDto.Email))
             throw new ArgumentException("Guest email is not valid");
+
+        if (!IsSupportedLanguage(requestDto.PreferredLanguage))
+            throw new ArgumentException("Guest language is not supported");
     }
 
     public static void ValidateInput(UpdateGuestRequestDto requestDto)
@@ -27,6 +30,9 @@ public static class GuestValidation
 
         if (!IsValidEmail(requestDto.Email))
             throw new ArgumentException("Guest email is not valid");
+
+        if (!IsSupportedLanguage(requestDto.PreferredLanguage))
+            throw new ArgumentException("Guest language is not supported");
     }
 
     public static void ValidateInput(RsvpSubmitRequestDto requestDto)
@@ -52,5 +58,17 @@ public static class GuestValidation
         {
             return false;
         }
+    }
+
+    private static bool IsSupportedLanguage(string? language)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            return true;
+        }
+
+        return language.Equals("en", StringComparison.OrdinalIgnoreCase)
+               || language.Equals("nl", StringComparison.OrdinalIgnoreCase)
+               || language.Equals("fr", StringComparison.OrdinalIgnoreCase);
     }
 }

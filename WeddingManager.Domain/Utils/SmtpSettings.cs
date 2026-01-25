@@ -8,4 +8,10 @@ public class SmtpSettings
     public string Username { get; set; } = null!;
     public string Password { get; set; } = null!;
     public bool UseSsl { get; set; }
+
+    public bool IsConfigured()
+    {
+        return !string.IsNullOrWhiteSpace(Host)
+               && !string.IsNullOrWhiteSpace(FromAddress);
+    }
 }

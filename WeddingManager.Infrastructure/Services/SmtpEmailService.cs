@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Mail;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WeddingManager.Domain.Entities;
@@ -8,31 +10,69 @@ using WeddingManager.Domain.Utils;
 
 namespace WeddingManager.Infrastructure.Services;
 
-public class SmtpEmailService(IOptions<EmailSettings> settings, ILogger<SmtpEmailService> logger)
+public class SmtpEmailService(
+    IOptions<SmtpSettings> smtpSettings,
+    IOptions<FrontendSettings> frontendSettings,
+    ILogger<SmtpEmailService> logger)
     : IEmailService
 {
-    private readonly EmailSettings _settings = settings.Value;
+    private readonly SmtpSettings _smtpSettings = smtpSettings.Value;
+    private readonly FrontendSettings _frontendSettings = frontendSettings.Value;
 
     public async Task SendRsvpConfirmationAsync(Guest guest, Wedding wedding)
     {
-        if (!_settings.IsConfigured())
+        if (!_smtpSettings.IsConfigured())
         {
             logger.LogInformation("Email settings not configured; skipping RSVP confirmation email.");
             return;
         }
 
-        using var message = new MailMessage(_settings.FromAddress, guest.Email);
+        using var message = new MailMessage(_smtpSettings.FromAddress, guest.Email);
         
         message.Subject = $"RSVP confirmation for {wedding.Title}";
         message.Body = BuildBody(guest, wedding);
 
-        using var client = new SmtpClient(_settings.Host, _settings.Port);
+        using var client = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port);
         
-        client.EnableSsl = _settings.UseSsl;
+        client.EnableSsl = _smtpSettings.UseSsl;
 
-        if (!string.IsNullOrWhiteSpace(_settings.Username))
+        if (!string.IsNullOrWhiteSpace(_smtpSettings.Username))
         {
-            client.Credentials = new NetworkCredential(_settings.Username, _settings.Password);
+            client.Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password);
+        }
+
+        await client.SendMailAsync(message);
+    }
+
+    public async Task SendInvitationAsync(Guest guest, Wedding wedding)
+    {
+        if (!_smtpSettings.IsConfigured())
+        {
+            throw new InvalidOperationException("Email settings are not configured");
+        }
+
+        if (!_frontendSettings.IsConfigured())
+        {
+            throw new InvalidOperationException("Frontend URL is not configured");
+        }
+
+        if (string.IsNullOrWhiteSpace(guest.InvitationToken))
+        {
+            throw new InvalidOperationException("Guest invitation token is missing");
+        }
+
+        using var message = new MailMessage(_smtpSettings.FromAddress, guest.Email);
+        var language = NormalizeLanguage(guest.PreferredLanguage);
+        message.Subject = GetInvitationSubject(language, wedding.Title);
+        message.Body = BuildInvitationBody(guest, wedding, BuildRsvpLink(wedding, guest.InvitationToken), language);
+        message.IsBodyHtml = true;
+
+        using var client = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port);
+        client.EnableSsl = _smtpSettings.UseSsl;
+
+        if (!string.IsNullOrWhiteSpace(_smtpSettings.Username))
+        {
+            client.Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password);
         }
 
         await client.SendMailAsync(message);
@@ -43,5 +83,110 @@ public class SmtpEmailService(IOptions<EmailSettings> settings, ILogger<SmtpEmai
         return $"Hi {guest.Name},\n\n" +
                $"Thanks for your RSVP ({guest.RsvpStatus}) for {wedding.Title}.\n\n" +
                "We look forward to celebrating with you!\n";
+    }
+
+    private string BuildInvitationBody(Guest guest, Wedding wedding, string rsvpLink, string language)
+    {
+        var culture = GetCulture(language);
+        var dateText = wedding.Date.ToString("D", culture);
+
+        var greeting = GetInvitationGreeting(language, guest.Name);
+        var detailsLabel = GetInvitationDetailsLabel(language);
+        var rsvpLabel = GetInvitationRsvpLabel(language);
+        var footer = GetInvitationFooter(language);
+
+        var builder = new StringBuilder();
+        builder.Append("<html><body style=\"font-family: Arial, sans-serif; color: #111;\">");
+        builder.Append($"<p>{WebUtility.HtmlEncode(greeting)}</p>");
+        builder.Append("<p>");
+        builder.Append($"{WebUtility.HtmlEncode(detailsLabel)}<br/>");
+        builder.Append($"<strong>{WebUtility.HtmlEncode(wedding.Title)}</strong><br/>");
+        builder.Append($"{WebUtility.HtmlEncode(dateText)}<br/>");
+        builder.Append($"{WebUtility.HtmlEncode(wedding.Location)}");
+        builder.Append("</p>");
+        builder.Append("<p>");
+        builder.Append($"<a href=\"{WebUtility.HtmlEncode(rsvpLink)}\" style=\"display:inline-block;padding:10px 16px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:6px;\">");
+        builder.Append($"{WebUtility.HtmlEncode(rsvpLabel)}</a>");
+        builder.Append("</p>");
+        builder.Append("<p style=\"font-size:12px;color:#666;\">");
+        builder.Append($"{WebUtility.HtmlEncode(footer)}<br/>");
+        builder.Append($"<a href=\"{WebUtility.HtmlEncode(rsvpLink)}\" style=\"color:#1d4ed8;\">");
+        builder.Append($"{WebUtility.HtmlEncode(rsvpLink)}</a>");
+        builder.Append("</p>");
+        builder.Append("</body></html>");
+
+        return builder.ToString();
+    }
+
+    private string BuildRsvpLink(Wedding wedding, string token)
+    {
+        var baseUrl = _frontendSettings.BaseUrl.TrimEnd('/');
+        var slugOrId = string.IsNullOrWhiteSpace(wedding.Slug) ? wedding.Id.ToString() : wedding.Slug;
+        return $"{baseUrl}/rsvp/{slugOrId}?guest={token}";
+    }
+
+    private static string GetInvitationSubject(string language, string weddingTitle)
+    {
+        return language.ToLowerInvariant() switch
+        {
+            "nl" => $"Je bent uitgenodigd voor {weddingTitle}",
+            "fr" => $"Vous êtes invité(e) à {weddingTitle}",
+            _ => $"You're invited to {weddingTitle}"
+        };
+    }
+
+    private static string GetInvitationGreeting(string language, string guestName)
+    {
+        return language.ToLowerInvariant() switch
+        {
+            "nl" => $"Hallo {guestName},",
+            "fr" => $"Bonjour {guestName},",
+            _ => $"Hi {guestName},"
+        };
+    }
+
+    private static string GetInvitationDetailsLabel(string language)
+    {
+        return language.ToLowerInvariant() switch
+        {
+            "nl" => "Details van het huwelijk:",
+            "fr" => "Détails du mariage :",
+            _ => "Wedding details:"
+        };
+    }
+
+    private static string GetInvitationRsvpLabel(string language)
+    {
+        return language.ToLowerInvariant() switch
+        {
+            "nl" => "Bevestig je aanwezigheid",
+            "fr" => "Confirmer votre présence",
+            _ => "RSVP now"
+        };
+    }
+
+    private static string GetInvitationFooter(string language)
+    {
+        return language.ToLowerInvariant() switch
+        {
+            "nl" => "Als de knop niet werkt, kopieer en plak de link in je browser.",
+            "fr" => "Si le bouton ne fonctionne pas, copiez-collez le lien dans votre navigateur.",
+            _ => "If the button doesn't work, copy and paste the link into your browser."
+        };
+    }
+
+    private static CultureInfo GetCulture(string language)
+    {
+        return language.ToLowerInvariant() switch
+        {
+            "nl" => new CultureInfo("nl-BE"),
+            "fr" => new CultureInfo("fr-FR"),
+            _ => new CultureInfo("en-US")
+        };
+    }
+
+    private static string NormalizeLanguage(string? language)
+    {
+        return string.IsNullOrWhiteSpace(language) ? "en" : language.Trim().ToLowerInvariant();
     }
 }

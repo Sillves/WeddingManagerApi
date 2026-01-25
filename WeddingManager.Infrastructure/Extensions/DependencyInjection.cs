@@ -27,7 +27,6 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         
         services.AddScoped<IUserContextService, UserContextService>();
-        services.Configure<EmailSettings>(configuration.GetSection("Email"));
         services.AddScoped<IEmailService, SmtpEmailService>();
 
         services.AddIdentityConfiguration();

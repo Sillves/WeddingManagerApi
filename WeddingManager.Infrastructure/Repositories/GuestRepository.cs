@@ -21,6 +21,14 @@ public class GuestRepository(WeddingDbContext context) : IGuestRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Guest>> GetByIdsAsync(Guid weddingId, IEnumerable<Guid> guestIds)
+    {
+        var ids = guestIds.ToList();
+        return await context.Guests
+            .Where(g => g.WeddingId == weddingId && ids.Contains(g.Id))
+            .ToListAsync();
+    }
+
     public async Task<Guest?> GetByEmailAsync(Guid weddingId, string email)
     {
         return await context.Guests

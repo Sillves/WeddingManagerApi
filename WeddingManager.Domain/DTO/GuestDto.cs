@@ -8,5 +8,7 @@ public class GuestDto
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public RsvpStatus RsvpStatus { get; set; }
+    public string PreferredLanguage { get; set; } = "en";
+    public DateTime? InvitationSentAt { get; set; }
     public Guid WeddingId { get; set; }
 }

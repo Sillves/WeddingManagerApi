@@ -145,5 +145,20 @@ public static class ConfigurationExtensions
 
             return services;
         }
+
+        public IServiceCollection AddFrontendSettings(IConfiguration configuration)
+        {
+            services.Configure<FrontendSettings>(configuration.GetSection("Frontend"));
+
+            services.PostConfigure<FrontendSettings>(options =>
+            {
+                if (string.IsNullOrWhiteSpace(options.BaseUrl))
+                {
+                    throw new InvalidOperationException("No frontend base URL provided");
+                }
+            });
+
+            return services;
+        }
     }
 }
