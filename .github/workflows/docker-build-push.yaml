@@ -93,8 +93,7 @@ jobs:
         with:
           access-key: ${{ secrets.SCALEWAY_ACCESS_KEY }}
           secret-key: ${{ secrets.SCALEWAY_SECRET_KEY }}
-          project-id: ${{ secrets.SCALEWAY_PROJECT_ID }}
-          region: fr-par
+          default-project-id: ${{ secrets.SCALEWAY_PROJECT_ID }}
 
       - name: Fetch DB connection string
         env:
