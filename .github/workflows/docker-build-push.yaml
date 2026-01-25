@@ -88,26 +88,30 @@ jobs:
           dotnet tool install --global dotnet-ef
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
-      - name: Install Scaleway CLI
-        run: |
-          curl -sL https://github.com/scaleway/scaleway-cli/releases/latest/download/scaleway-cli-linux-amd64 -o scw
-          chmod +x scw
-          sudo mv scw /usr/local/bin/scw
+      - name: Set up Scaleway CLI
+        uses: scaleway/action-scw@v0
+        with:
+          access-key: ${{ secrets.SCALEWAY_ACCESS_KEY }}
+          secret-key: ${{ secrets.SCALEWAY_SECRET_KEY }}
+          project-id: ${{ secrets.SCALEWAY_PROJECT_ID }}
+          region: fr-par
 
       - name: Fetch DB connection string
         env:
-          SCW_ACCESS_KEY: ${{ secrets.SCALEWAY_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCALEWAY_SECRET_KEY }}
-          SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCALEWAY_DEFAULT_ORGANIZATION_ID }}
-          SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCALEWAY_PROJECT_ID }}
-          SCW_REGION: fr-par
           SCW_SECRET_NAME: DatabaseSettings__ConnectionString
         run: |
-          DB_CONN=$(scw secret version access name=$SCW_SECRET_NAME --output json | jq -r .data | base64 -d)
-          echo "DatabaseSettings__ConnectionString=$DB_CONN" >> $GITHUB_ENV
+          DB_CONN=$(scw secret version access name=$SCW_SECRET_NAME -o json | python3 - <<'PY'
+import json, sys, base64
+data = json.load(sys.stdin)
+print(base64.b64decode(data["data"]).decode("utf-8"))
+PY
+          )
+          echo "DatabaseSettings__ConnectionString=$DB_CONN" >> "$GITHUB_ENV"
 
       - name: Apply migrations
-        run: dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web
+        run: |
+          dotnet restore
+          dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web
 
   deploy-to-vps:
     needs: [build-and-push, migrate-db]
@@ -130,17 +134,29 @@ jobs:
           SCW_INSTANCE_ID: ${{ secrets.SCALEWAY_INSTANCE_ID }}
         run: |
           set -euo pipefail
-          server_resp=$(curl -sS -H "X-Auth-Token: $SCW_SECRET_KEY" \
+          server_resp=$(curl -sS -w "\n%{http_code}" -H "X-Auth-Token: $SCW_SECRET_KEY" \
             "https://api.scaleway.com/instance/v1/zones/${SCW_ZONE}/servers/${SCW_INSTANCE_ID}")
-          ip=$(echo "$server_resp" | jq -r '.server.public_ip.address // .server.public_ips[0].address // empty')
+          server_body=$(echo "$server_resp" | sed '$d')
+          server_status=$(echo "$server_resp" | tail -n1)
+          if [ "$server_status" != "200" ]; then
+            echo "Scaleway server lookup failed (${server_status}): ${server_body}" >&2
+            exit 1
+          fi
+          ip=$(echo "$server_body" | jq -r '.server.public_ip.address // .server.public_ips[0].address // empty')
           if [ -z "$ip" ]; then
-            ips_resp=$(curl -sS -H "X-Auth-Token: $SCW_SECRET_KEY" \
+            ips_resp=$(curl -sS -w "\n%{http_code}" -H "X-Auth-Token: $SCW_SECRET_KEY" \
               "https://api.scaleway.com/instance/v1/zones/${SCW_ZONE}/ips?server_id=${SCW_INSTANCE_ID}")
-            ip=$(echo "$ips_resp" | jq -r '.ips[0].address // empty')
+            ips_body=$(echo "$ips_resp" | sed '$d')
+            ips_status=$(echo "$ips_resp" | tail -n1)
+            if [ "$ips_status" != "200" ]; then
+              echo "Scaleway IP lookup failed (${ips_status}): ${ips_body}" >&2
+              exit 1
+            fi
+            ip=$(echo "$ips_body" | jq -r '.ips[0].address // empty')
           fi
           if [ -z "$ip" ] || [ "$ip" = "null" ]; then
             echo "Failed to resolve public IP" >&2
-            echo "Server response: $(echo "$server_resp" | jq -c '.server.public_ip, .server.public_ips')" >&2
+            echo "Server response: $(echo "$server_body" | jq -c '.server.public_ip, .server.public_ips')" >&2
             exit 1
           fi
           echo "VPS_HOST=$ip" >> "$GITHUB_ENV"
