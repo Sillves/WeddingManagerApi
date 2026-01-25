@@ -1,7 +1,26 @@
-﻿services:
-  weddingmanagerapi:
-    image: weddingmanagerapi
-    build:
-      context: .
-      dockerfile: Dockerfile
+﻿version: '3.8'
 
+services:
+  postgres:
+    image: postgres:17
+    container_name: amare-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: amare
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  smtp4dev:
+    image: rnwood/smtp4dev:latest
+    container_name: amare-smtp4dev
+    ports:
+      - "3000:80"
+      - "2525:25"
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

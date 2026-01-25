@@ -12,10 +12,10 @@ post {
 
 body:json {
   {
-    "email": "Sara@hotmail.com",
-    "firstName": "Sara", 
-    "lastName": "Cleymans",
-    "password": "SaraMoelans123"
+    "email": "{{$randomFirstName}}@hotmail.com",
+    "firstName": "{{$randomFirstName}}", 
+    "lastName": "{{$randomLastName}}",
+    "password": "{{$randomFirstName}}123"
   }
 }
 
