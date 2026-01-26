@@ -104,7 +104,8 @@ jobs:
       - name: Apply migrations
         run: |
           dotnet restore
-          dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web
+          dotnet build --verbosity detailed
+          dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web --verbose
 
   deploy-to-vps:
     needs: [build-and-push, migrate-db]
