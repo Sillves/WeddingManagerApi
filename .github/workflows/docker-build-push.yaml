@@ -63,9 +63,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
-
   migrate-db:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -104,8 +101,8 @@ jobs:
       - name: Apply migrations
         run: |
           dotnet restore
-          dotnet build --verbosity detailed
-          dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web --verbose
+          dotnet build
+          dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web
 
   deploy-to-vps:
     needs: [build-and-push, migrate-db]
@@ -117,9 +114,7 @@ jobs:
 
     steps:
       - name: Wait for registry propagation
-        run: |
-          echo "⏳ Waiting 15 seconds for Scaleway registry to propagate..."
-          sleep 15
+        run: sleep 15
 
       - name: Fetch VPS public IP from Scaleway
         env:
@@ -169,55 +164,30 @@ jobs:
           envs: SCW_SECRET_KEY,SCW_DEFAULT_ORGANIZATION_ID,SCW_DEFAULT_PROJECT_ID
           script: |
             cd /app
-            
-            # Retry logic for pulling images
             MAX_RETRIES=3
             RETRY_COUNT=0
             RETRY_DELAY=10
-            
-            echo "🔄 Pulling latest images with retry logic..."
             while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
               if docker-compose pull; then
-                echo "✅ Images pulled successfully"
                 break
+              fi
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                sleep $RETRY_DELAY
               else
-                RETRY_COUNT=$((RETRY_COUNT + 1))
-                if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                  echo "⚠️  Pull failed, retry $RETRY_COUNT/$MAX_RETRIES in ${RETRY_DELAY}s..."
-                  sleep $RETRY_DELAY
-                else
-                  echo "❌ Pull failed after $MAX_RETRIES attempts"
-                  exit 1
-                fi
+                exit 1
               fi
             done
-            
-            # Bring up containers with secrets injected
             export SCW_REGION="fr-par"
-            
-            echo "🚀 Starting containers..."
             docker-compose up -d
-            
-            # Wait for health checks
             sleep 5
-            
-            # Verify deployment
-            echo "📊 Deployment status:"
-            docker-compose ps
-            
-            echo ""
-            echo "📋 API logs (last 20 lines):"
-            docker-compose logs api | tail -20
 
       - name: Notify deployment
         if: success()
-        run: |
-          echo "✅ Deployment successful!"
-          echo "🌐 Application: https://amare.wedding"
+        run: echo "Deployment successful!"
 
       - name: Notify deployment failure
         if: failure()
         run: |
-          echo "❌ Deployment failed!"
-          echo "Check the logs above for details"
+          echo "Deployment failed."
           exit 1
