@@ -11,7 +11,7 @@ on:
       - 'WeddingManager.Infrastructure/**'
       - 'WeddingManager.Domain/**'
       - 'Dockerfile'
-      - '.github/workflows/docker-build-push.yml'
+      - '.github/workflows/docker-build-push.yaml'
       - '!**.md'
   workflow_dispatch:
 
