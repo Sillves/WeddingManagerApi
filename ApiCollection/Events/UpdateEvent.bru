@@ -1,0 +1,30 @@
+meta {
+  name: UpdateEvent
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/events/{{eventId}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Reception",
+    "startDate": "{{$randomDateFuture}}",
+    "endDate": "{{$randomDateFuture}}",
+    "location": "{{$randomCity}}",
+    "description": "Updated reception details"
+  }
+}
+
+settings {
+  encodeUrl: false
+  timeout: 0
+}

@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeddingManager.Infrastructu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeddingManager.Web", "WeddingManager.Web\WeddingManager.Web.csproj", "{1C98A9A4-828F-4804-BAC8-84523C43AEDB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeddingManager.Tests", "WeddingManager.Tests\WeddingManager.Tests.csproj", "{0011E166-EEFA-41A0-97FB-672CEDC86664}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,18 @@ Global
 		{1C98A9A4-828F-4804-BAC8-84523C43AEDB}.Release|x64.Build.0 = Release|Any CPU
 		{1C98A9A4-828F-4804-BAC8-84523C43AEDB}.Release|x86.ActiveCfg = Release|Any CPU
 		{1C98A9A4-828F-4804-BAC8-84523C43AEDB}.Release|x86.Build.0 = Release|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Debug|x64.Build.0 = Debug|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Debug|x86.Build.0 = Debug|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Release|x64.ActiveCfg = Release|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Release|x64.Build.0 = Release|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Release|x86.ActiveCfg = Release|Any CPU
+		{0011E166-EEFA-41A0-97FB-672CEDC86664}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

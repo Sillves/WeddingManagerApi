@@ -18,6 +18,11 @@ public class MappingProfile : Profile
         CreateMap<Guest, GuestDto>();
         CreateMap<CreateGuestRequestDto, Guest>();
         CreateMap<UpdateGuestRequestDto, Guest>();
+
+        // Event mappings
+        CreateMap<Event, EventDto>();
+        CreateMap<CreateEventRequestDto, Event>();
+        CreateMap<UpdateEventRequestDto, Event>();
         
         CreateMap<WeddingUser, WeddingUserDto>()
             .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User.Email))

@@ -15,4 +15,5 @@ public class Wedding
     public ICollection<Guest> Guests { get; set; } = null!;
     public ICollection<Page> Pages { get; set; } = null!;
     public ICollection<Media> Media { get; set; } = null!;
+    public ICollection<Event> Events { get; set; } = null!;
 }

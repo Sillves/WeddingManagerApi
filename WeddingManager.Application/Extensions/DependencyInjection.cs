@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<IWeddingService, WeddingService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IGuestService, GuestService>();
+        services.AddScoped<IEventService, EventService>();
         services.AddScoped<IWeddingUserService, WeddingUserService>();
         services.AddAutoMapper(cfg => 
         {

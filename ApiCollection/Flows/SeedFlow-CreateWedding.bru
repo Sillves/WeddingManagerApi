@@ -1,0 +1,32 @@
+meta {
+  name: SeedFlow-CreateWedding
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/weddings
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "title": "{{$randomFirstName}} & {{$randomFirstName}}",
+    "date": "{{$randomDateFuture}}",
+    "location": "{{$randomCity}}"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response.id) {
+    bru.setEnvVar("weddingId", response.id);
+    console.log("✓ Token saved");
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

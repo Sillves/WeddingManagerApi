@@ -14,4 +14,5 @@ public class Guest
     public DateTime? InvitationSentAt { get; set; }
     public Guid WeddingId { get; set; }
     public Wedding Wedding { get; set; } = null!;
+    public ICollection<Event> Events { get; set; } = null!;
 }

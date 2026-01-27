@@ -1,0 +1,31 @@
+meta {
+  name: SeedFlow-Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "lorenzcleymans@hotmail.com",
+    "password": "Lorenz123"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response.token) {
+    bru.setEnvVar("authToken", response.token);
+    console.log("✓ Token saved");
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

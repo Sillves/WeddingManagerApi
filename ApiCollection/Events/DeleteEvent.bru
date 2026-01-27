@@ -1,0 +1,16 @@
+meta {
+  name: DeleteEvent
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/events/{{eventId}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
