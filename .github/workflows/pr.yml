@@ -34,13 +34,54 @@ jobs:
       - name: Test
         run: dotnet test WeddingManager.Tests/WeddingManager.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" --results-directory WeddingManager.Tests/TestResults
 
-      - name: Generate coverage report
+      - name: Generate coverage summary
         run: |
           dotnet tool install --tool-path ./.tools dotnet-reportgenerator-globaltool
           ./.tools/reportgenerator \
             -reports:"WeddingManager.Tests/TestResults/**/coverage.cobertura.xml" \
-            -targetdir:"WeddingManager.Tests/TestResults/coverage-report" \
-            -reporttypes:Html
+            -targetdir:"WeddingManager.Tests/TestResults/coverage-summary" \
+            -reporttypes:TextSummary
+          cat WeddingManager.Tests/TestResults/coverage-summary/Summary.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment coverage summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'WeddingManager.Tests/TestResults/coverage-summary/Summary.txt';
+            if (!fs.existsSync(path)) {
+              core.warning(`Coverage summary not found at ${path}`);
+              return;
+            }
+            const summary = fs.readFileSync(path, 'utf8').trim();
+            const marker = '<!-- coverage-summary -->';
+            const body = `${marker}\n### Coverage Summary\n\n\`\`\`\n${summary}\n\`\`\``;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+            });
+            const existing = comments.find(comment => comment.body && comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
 
       - name: Upload test results
         if: always()
@@ -48,10 +89,3 @@ jobs:
         with:
           name: test-results
           path: WeddingManager.Tests/TestResults
-
-      - name: Upload coverage report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: WeddingManager.Tests/TestResults/coverage-report
