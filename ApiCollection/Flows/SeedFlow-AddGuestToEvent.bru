@@ -1,0 +1,16 @@
+meta {
+  name: SeedFlow-AddGuestToEvent
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/events/{{eventId}}/guests/{{guestId}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

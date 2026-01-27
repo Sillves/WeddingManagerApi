@@ -1,0 +1,38 @@
+meta {
+  name: SeedFlow-CreateEvent
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/weddings/{{weddingId}}/events
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Ceremony",
+    "startDate": "{{$randomDateFuture}}",
+    "endDate": "{{$randomDateFuture}}",
+    "location": "{{$randomCity}}",
+    "description": "Main ceremony event"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response.id) {
+    bru.setEnvVar("eventId", response.id);
+    console.log("✓ Token saved");
+  }
+}
+
+settings {
+  encodeUrl: false
+  timeout: 0
+}

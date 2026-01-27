@@ -1,0 +1,16 @@
+meta {
+  name: GetEvent
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/events/{{eventId}}
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: false
+  timeout: 0
+}

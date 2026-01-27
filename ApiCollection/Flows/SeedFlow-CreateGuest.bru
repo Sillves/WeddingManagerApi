@@ -1,0 +1,37 @@
+meta {
+  name: SeedFlow-CreateGuest
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/weddings/{{weddingId}}/guests
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "{{$randomFirstName}} {{$randomLastName}}",
+    "email": "{{$randomEmail}}",
+    "rsvpStatus": 0,
+    "preferredLanguage": "nl"
+  }
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response.id) {
+    bru.setEnvVar("guestId", response.id);
+    console.log("✓ Token saved");
+  }
+}
+
+settings {
+  encodeUrl: false
+  timeout: 0
+}
