@@ -18,7 +18,17 @@ body:json {
   {
     "name": "{{$randomFirstName}} {{$randomLastName}}",
     "email": "{{$randomEmail}}",
-    "rsvpStatus": "Pending"
+    "rsvpStatus": 0,
+    "preferredLanguage": "nl"
+  }
+  
+}
+
+script:post-response {
+  const response = res.getBody();
+  if (response.id) {
+    bru.setEnvVar("guestId", response.id);
+    console.log("✓ Token saved");
   }
 }
 

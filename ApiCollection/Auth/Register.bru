@@ -15,8 +15,15 @@ body:json {
     "email": "{{$randomFirstName}}@hotmail.com",
     "firstName": "{{$randomFirstName}}", 
     "lastName": "{{$randomLastName}}",
-    "password": "{{$randomFirstName}}123"
+    "password": "{{$randomFirstName}}{{$randomLastName}}123"
   }
+}
+
+script:post-response {
+  let data = res.body;
+  console.log(data)
+  bru.setEnvVar("authToken", data.token);
+  
 }
 
 settings {
