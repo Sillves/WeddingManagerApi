@@ -8,5 +8,6 @@ public class EventDto
     public DateTime EndDate { get; set; }
     public string Location { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public List<GuestDto> GuestDtos { get; set; } = new();
     public Guid WeddingId { get; set; }
 }

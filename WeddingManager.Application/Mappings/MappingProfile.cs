@@ -20,7 +20,8 @@ public class MappingProfile : Profile
         CreateMap<UpdateGuestRequestDto, Guest>();
 
         // Event mappings
-        CreateMap<Event, EventDto>();
+        CreateMap<Event, EventDto>()
+            .ForMember(dest => dest.GuestDtos, opt => opt.MapFrom(src => src.Guests));
         CreateMap<CreateEventRequestDto, Event>();
         CreateMap<UpdateEventRequestDto, Event>();
         
