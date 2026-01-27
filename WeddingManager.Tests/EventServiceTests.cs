@@ -143,8 +143,95 @@ public class EventServiceTests
             Location = "Bruges"
         };
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.UpdateEventAsync(Guid.NewGuid(), update));
+        repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Event>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("", "Location", "Event name is required")]
+    [InlineData("Name", "", "Event location is required")]
+    public async Task CreateEventAsync_ThrowsWhenRequiredFieldsMissing(string name, string location, string message)
+    {
+        var repositoryMock = new Mock<IEventRepository>();
+        var mapperMock = new Mock<IMapper>();
+        var service = new EventService(repositoryMock.Object, mapperMock.Object);
+        var request = CreateValidCreateRequest();
+        request.Name = name;
+        request.Location = location;
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.CreateEventAsync(Guid.NewGuid(), request));
+
+        Assert.Equal(message, exception.Message);
+        repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
+        mapperMock.Verify(m => m.Map<Event>(It.IsAny<CreateEventRequestDto>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateEventAsync_ThrowsWhenStartDateDefault()
+    {
+        var repositoryMock = new Mock<IEventRepository>();
+        var mapperMock = new Mock<IMapper>();
+        var service = new EventService(repositoryMock.Object, mapperMock.Object);
+        var request = CreateValidCreateRequest();
+        request.StartDate = default;
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.CreateEventAsync(Guid.NewGuid(), request));
+
+        Assert.Equal("Event start date is required", exception.Message);
+        repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateEventAsync_ThrowsWhenEndDateDefault()
+    {
+        var repositoryMock = new Mock<IEventRepository>();
+        var mapperMock = new Mock<IMapper>();
+        var service = new EventService(repositoryMock.Object, mapperMock.Object);
+        var request = CreateValidCreateRequest();
+        request.EndDate = default;
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.CreateEventAsync(Guid.NewGuid(), request));
+
+        Assert.Equal("Event end date is required", exception.Message);
+        repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateEventAsync_ThrowsWhenEndDateBeforeStartDate()
+    {
+        var repositoryMock = new Mock<IEventRepository>();
+        var mapperMock = new Mock<IMapper>();
+        var service = new EventService(repositoryMock.Object, mapperMock.Object);
+        var request = CreateValidCreateRequest();
+        request.StartDate = new DateTime(2026, 1, 2, 12, 0, 0, DateTimeKind.Utc);
+        request.EndDate = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.CreateEventAsync(Guid.NewGuid(), request));
+
+        Assert.Equal("Event end date must be on or after start date", exception.Message);
+        repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateEventAsync_ThrowsWhenEndDateBeforeStartDate()
+    {
+        var repositoryMock = new Mock<IEventRepository>();
+        var mapperMock = new Mock<IMapper>();
+        var service = new EventService(repositoryMock.Object, mapperMock.Object);
+        var update = CreateValidUpdateRequest();
+        update.StartDate = new DateTime(2026, 1, 2, 12, 0, 0, DateTimeKind.Utc);
+        update.EndDate = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.UpdateEventAsync(Guid.NewGuid(), update));
+
+        Assert.Equal("Event end date must be on or after start date", exception.Message);
+        repositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
         repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Event>()), Times.Never);
     }
 
@@ -223,4 +310,22 @@ public class EventServiceTests
 
         Assert.Equal(EventGuestChangeResult.NotInEvent, result);
     }
+
+    private static CreateEventRequestDto CreateValidCreateRequest() => new()
+    {
+        Name = "Ceremony",
+        StartDate = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc),
+        EndDate = new DateTime(2026, 1, 1, 13, 0, 0, DateTimeKind.Utc),
+        Location = "Ghent",
+        Description = "Main ceremony"
+    };
+
+    private static UpdateEventRequestDto CreateValidUpdateRequest() => new()
+    {
+        Name = "Reception",
+        StartDate = new DateTime(2026, 1, 1, 18, 0, 0, DateTimeKind.Utc),
+        EndDate = new DateTime(2026, 1, 1, 22, 0, 0, DateTimeKind.Utc),
+        Location = "Bruges",
+        Description = "Updated details"
+    };
 }

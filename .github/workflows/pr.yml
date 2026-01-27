@@ -1,0 +1,57 @@
+name: PR Build and Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            global.json
+
+      - name: Restore
+        run: dotnet restore WeddingManagerApi.sln
+
+      - name: Build
+        run: dotnet build WeddingManagerApi.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test WeddingManager.Tests/WeddingManager.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" --results-directory WeddingManager.Tests/TestResults
+
+      - name: Generate coverage report
+        run: |
+          dotnet tool install --tool-path ./.tools dotnet-reportgenerator-globaltool
+          ./.tools/reportgenerator \
+            -reports:"WeddingManager.Tests/TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"WeddingManager.Tests/TestResults/coverage-report" \
+            -reporttypes:Html
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: WeddingManager.Tests/TestResults
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: WeddingManager.Tests/TestResults/coverage-report

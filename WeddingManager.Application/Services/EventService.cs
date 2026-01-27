@@ -10,6 +10,8 @@ public class EventService(IEventRepository eventRepository, IMapper mapper) : IE
 {
     public async Task<EventDto> CreateEventAsync(Guid weddingId, CreateEventRequestDto requestDto)
     {
+        EventValidation.ValidateInput(requestDto);
+
         var @event = mapper.Map<Event>(requestDto);
         @event.Id = Guid.NewGuid();
         @event.WeddingId = weddingId;
@@ -44,8 +46,10 @@ public class EventService(IEventRepository eventRepository, IMapper mapper) : IE
 
     public async Task<EventDto> UpdateEventAsync(Guid eventId, UpdateEventRequestDto requestDto)
     {
+        EventValidation.ValidateInput(requestDto);
+
         var @event = await eventRepository.GetByIdAsync(eventId)
-            ?? throw new ArgumentException($"Event with id {eventId} not found");
+            ?? throw new KeyNotFoundException($"Event with id {eventId} not found");
 
         mapper.Map(requestDto, @event);
         await eventRepository.UpdateAsync(@event);
@@ -55,7 +59,7 @@ public class EventService(IEventRepository eventRepository, IMapper mapper) : IE
     public async Task DeleteEventAsync(Guid eventId)
     {
         var existing = await eventRepository.GetByIdAsync(eventId)
-            ?? throw new ArgumentException($"Event with id {eventId} not found");
+            ?? throw new KeyNotFoundException($"Event with id {eventId} not found");
 
         await eventRepository.DeleteAsync(existing.Id);
     }

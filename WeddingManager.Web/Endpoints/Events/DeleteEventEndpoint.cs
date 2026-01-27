@@ -15,7 +15,7 @@ public class DeleteEventEndpoint : IEndpoint
                         await eventService.DeleteEventAsync(eventId);
                         return Results.NoContent();
                     }
-                    catch (ArgumentException ex)
+                    catch (KeyNotFoundException ex)
                     {
                         return Results.NotFound(new { error = ex.Message });
                     }

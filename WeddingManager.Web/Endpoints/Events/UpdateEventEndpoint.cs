@@ -18,6 +18,10 @@ public class UpdateEventEndpoint : IEndpoint
                     }
                     catch (ArgumentException ex)
                     {
+                        return Results.BadRequest(new { error = ex.Message });
+                    }
+                    catch (KeyNotFoundException ex)
+                    {
                         return Results.NotFound(new { error = ex.Message });
                     }
                 })
@@ -26,6 +30,7 @@ public class UpdateEventEndpoint : IEndpoint
             .RequireAuthorization()
             .AddEndpointFilter<RequireEventAccessFilter>()
             .Produces<EventDto>(200)
+            .Produces(400)
             .Produces(401)
             .Produces(403)
             .Produces(404);
