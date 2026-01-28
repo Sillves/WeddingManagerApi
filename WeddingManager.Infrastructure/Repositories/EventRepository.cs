@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
@@ -92,9 +93,123 @@ public class EventRepository(WeddingDbContext context, IUserContextService userC
         return EventGuestChangeResult.Added;
     }
 
+    public async Task<EventGuestBatchChangeResultDto> AddGuestsToEventAsync(Guid eventId, IReadOnlyCollection<Guid> guestIds)
+    {
+        var result = new EventGuestBatchChangeResultDto();
+
+        var eventToUpdate = await context.Events
+            .Include(e => e.Guests)
+            .Include(e => e.Wedding)
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+        if (eventToUpdate == null)
+        {
+            result.Status = EventGuestChangeResult.NotFound;
+            return result;
+        }
+
+        var userId = userContextService.GetUserId();
+        if (eventToUpdate.Wedding.UserId != userId)
+        {
+            result.Status = EventGuestChangeResult.Unauthorized;
+            return result;
+        }
+
+        var distinctGuestIds = guestIds.Distinct().ToList();
+        if (distinctGuestIds.Count == 0)
+        {
+            result.Status = EventGuestChangeResult.Added;
+            return result;
+        }
+
+        var guests = await context.Guests
+            .Where(g => distinctGuestIds.Contains(g.Id) && g.WeddingId == eventToUpdate.WeddingId)
+            .ToListAsync();
+
+        var foundGuestIdSet = guests.Select(g => g.Id).ToHashSet();
+        foreach (var guestId in distinctGuestIds)
+        {
+            if (!foundGuestIdSet.Contains(guestId))
+            {
+                result.NotFoundGuestIds.Add(guestId);
+            }
+        }
+
+        var existingGuestIdSet = eventToUpdate.Guests.Select(g => g.Id).ToHashSet();
+        foreach (var guest in guests)
+        {
+            if (existingGuestIdSet.Contains(guest.Id))
+            {
+                result.AlreadyInEventGuestIds.Add(guest.Id);
+                continue;
+            }
+
+            eventToUpdate.Guests.Add(guest);
+            result.AddedGuestIds.Add(guest.Id);
+        }
+
+        if (result.AddedGuestIds.Count > 0)
+        {
+            await context.SaveChangesAsync();
+        }
+
+        result.Status = EventGuestChangeResult.Added;
+        return result;
+    }
+
     public Task<EventGuestChangeResult> RemoveGuestFromEventAsync(Guid eventId, Guid guestId)
     {
         return RemoveGuestInternalAsync(eventId, guestId);
+    }
+
+    public async Task<EventGuestBatchRemoveResultDto> RemoveGuestsFromEventAsync(Guid eventId, IReadOnlyCollection<Guid> guestIds)
+    {
+        var result = new EventGuestBatchRemoveResultDto();
+
+        var eventToUpdate = await context.Events
+            .Include(e => e.Guests)
+            .Include(e => e.Wedding)
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+        if (eventToUpdate == null)
+        {
+            result.Status = EventGuestChangeResult.NotFound;
+            return result;
+        }
+
+        var userId = userContextService.GetUserId();
+        if (eventToUpdate.Wedding.UserId != userId)
+        {
+            result.Status = EventGuestChangeResult.Unauthorized;
+            return result;
+        }
+
+        var distinctGuestIds = guestIds.Distinct().ToList();
+        if (distinctGuestIds.Count == 0)
+        {
+            result.Status = EventGuestChangeResult.Removed;
+            return result;
+        }
+
+        var eventGuestIdSet = eventToUpdate.Guests.Select(g => g.Id).ToHashSet();
+        foreach (var guestId in distinctGuestIds)
+        {
+            if (!eventGuestIdSet.Contains(guestId))
+            {
+                result.NotInEventGuestIds.Add(guestId);
+                continue;
+            }
+
+            var guest = eventToUpdate.Guests.First(g => g.Id == guestId);
+            eventToUpdate.Guests.Remove(guest);
+            result.RemovedGuestIds.Add(guestId);
+        }
+
+        if (result.RemovedGuestIds.Count > 0)
+        {
+            await context.SaveChangesAsync();
+        }
+
+        result.Status = EventGuestChangeResult.Removed;
+        return result;
     }
 
     public async Task<IEnumerable<Event>> GetByWeddingIdAsync(Guid weddingId)

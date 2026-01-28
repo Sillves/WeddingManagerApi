@@ -56,6 +56,18 @@ WeddingManager.Domain/       # Domain models & entities - Core models
 - `PUT /api/guests/{guestId}` - Update guest
 - `DELETE /api/guests/{guestId}` - Remove guest
 
+### Events
+- `GET /api/events` - Get all events
+- `GET /api/weddings/{weddingId}/events` - Get events for wedding
+- `POST /api/weddings/{weddingId}/events` - Create event
+- `GET /api/events/{eventId}` - Get event by ID
+- `PUT /api/events/{eventId}` - Update event
+- `DELETE /api/events/{eventId}` - Delete event
+- `POST /api/events/{eventId}/guests/{guestId}` - Add guest to event
+- `DELETE /api/events/{eventId}/guests/{guestId}` - Remove guest from event
+- `POST /api/events/{eventId}/guests` - Add multiple guests to event (body: guestIds)
+- `DELETE /api/events/{eventId}/guests` - Remove multiple guests from event (body: guestIds)
+
 ### Wedding Users
 - `GET /api/weddings/{weddingId}/users` - Get wedding users
 - `POST /api/weddings/{weddingId}/users` - Add user to wedding
@@ -129,7 +141,7 @@ ASPNETCORE_URLS                 # Default: http://+:8080
 
 ### Database
 ```
-DATABASE_URL                    # PostgreSQL connection string
+DatabaseSettings__ConnectionString # PostgreSQL connection string
 ```
 
 ## Docker Setup
@@ -187,6 +199,10 @@ curl https://amare.wedding/api/health
 
 ### Database connection test
 ```bash
+./Scripts/update-db.ps1
+# Or on macOS/Linux
+./Scripts/update-db.sh
+
 psql postgresql://user:password@postgres:5432/wedding_manager -c "SELECT 1"
 ```
 

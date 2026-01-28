@@ -67,6 +67,12 @@ public class EventService(IEventRepository eventRepository, IMapper mapper) : IE
     public Task<EventGuestChangeResult> AddGuestToEventAsync(Guid eventId, Guid guestId) =>
         eventRepository.AddGuestToEventAsync(eventId, guestId);
 
+    public Task<EventGuestBatchChangeResultDto> AddGuestsToEventAsync(Guid eventId, IReadOnlyCollection<Guid> guestIds) =>
+        eventRepository.AddGuestsToEventAsync(eventId, guestIds);
+
     public Task<EventGuestChangeResult> RemoveGuestFromEventAsync(Guid eventId, Guid guestId) =>
         eventRepository.RemoveGuestFromEventAsync(eventId, guestId);
+
+    public Task<EventGuestBatchRemoveResultDto> RemoveGuestsFromEventAsync(Guid eventId, IReadOnlyCollection<Guid> guestIds) =>
+        eventRepository.RemoveGuestsFromEventAsync(eventId, guestIds);
 }

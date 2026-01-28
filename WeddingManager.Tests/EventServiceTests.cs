@@ -297,6 +297,26 @@ public class EventServiceTests
     }
 
     [Fact]
+    public async Task AddGuestsToEventAsync_DelegatesResult()
+    {
+        var repositoryMock = new Mock<IEventRepository>();
+        var mapperMock = new Mock<IMapper>();
+        var expected = new EventGuestBatchChangeResultDto
+        {
+            Status = EventGuestChangeResult.Added,
+            AddedGuestIds = [Guid.NewGuid()]
+        };
+        repositoryMock
+            .Setup(r => r.AddGuestsToEventAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<Guid>>()))
+            .ReturnsAsync(expected);
+        var service = new EventService(repositoryMock.Object, mapperMock.Object);
+
+        var result = await service.AddGuestsToEventAsync(Guid.NewGuid(), [Guid.NewGuid()]);
+
+        Assert.Same(expected, result);
+    }
+
+    [Fact]
     public async Task RemoveGuestFromEventAsync_DelegatesResult()
     {
         var repositoryMock = new Mock<IEventRepository>();
@@ -309,6 +329,26 @@ public class EventServiceTests
         var result = await service.RemoveGuestFromEventAsync(Guid.NewGuid(), Guid.NewGuid());
 
         Assert.Equal(EventGuestChangeResult.NotInEvent, result);
+    }
+
+    [Fact]
+    public async Task RemoveGuestsFromEventAsync_DelegatesResult()
+    {
+        var repositoryMock = new Mock<IEventRepository>();
+        var mapperMock = new Mock<IMapper>();
+        var expected = new EventGuestBatchRemoveResultDto
+        {
+            Status = EventGuestChangeResult.Removed,
+            RemovedGuestIds = [Guid.NewGuid()]
+        };
+        repositoryMock
+            .Setup(r => r.RemoveGuestsFromEventAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<Guid>>()))
+            .ReturnsAsync(expected);
+        var service = new EventService(repositoryMock.Object, mapperMock.Object);
+
+        var result = await service.RemoveGuestsFromEventAsync(Guid.NewGuid(), [Guid.NewGuid()]);
+
+        Assert.Same(expected, result);
     }
 
     private static CreateEventRequestDto CreateValidCreateRequest() => new()

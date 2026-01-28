@@ -60,7 +60,7 @@ cd WeddingManagerApi
 # Create .env file
 cat > .env << 'EOF'
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/wedding_manager
+DatabaseSettings__ConnectionString=Host=localhost;Database=WeddingDb;Username=postgres;Password=postgres
 
 # Scaleway
 SCW_SECRET_KEY=your_scaleway_secret_key
@@ -113,6 +113,20 @@ POST   /api/weddings/{weddingId}/guests # Add guest to wedding
 GET    /api/guests/{guestId}            # Get guest by id
 PUT    /api/guests/{guestId}            # Update guest
 DELETE /api/guests/{guestId}            # Remove guest
+```
+
+### Events
+```bash
+GET    /api/events                       # Get all events
+GET    /api/weddings/{weddingId}/events  # Get events for wedding
+POST   /api/weddings/{weddingId}/events  # Create event
+GET    /api/events/{eventId}             # Get event by id
+PUT    /api/events/{eventId}             # Update event
+DELETE /api/events/{eventId}             # Delete event
+POST   /api/events/{eventId}/guests/{guestId} # Add guest to event
+DELETE /api/events/{eventId}/guests/{guestId} # Remove guest from event
+POST   /api/events/{eventId}/guests      # Add multiple guests to event (body: guestIds)
+DELETE /api/events/{eventId}/guests      # Remove multiple guests from event (body: guestIds)
 ```
 
 ### Wedding Users
@@ -246,7 +260,7 @@ ASPNETCORE_URLS             # Binding URL (default: http://+:8080)
 ### Database
 
 ```
-DATABASE_URL                # PostgreSQL connection string
+DatabaseSettings__ConnectionString # PostgreSQL connection string
 ```
 
 ## Monitoring & Logging
@@ -297,6 +311,11 @@ curl -v https://amare.wedding/health
 ### Database connection errors
 
 ```bash
+# Update database schema locally
+./Scripts/update-db.ps1
+# Or on macOS/Linux
+./Scripts/update-db.sh
+
 # Test PostgreSQL connection
 docker-compose exec api dotnet
 
