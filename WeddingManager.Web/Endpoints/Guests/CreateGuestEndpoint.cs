@@ -1,4 +1,5 @@
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 
@@ -23,6 +24,10 @@ public class CreateGuestEndpoint : IEndpoint
                 catch (UnauthorizedAccessException)
                 {
                     return Results.Forbid();
+                }
+                catch (SubscriptionLimitExceededException ex)
+                {
+                    return Results.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden);
                 }
                 catch (InvalidOperationException ex)
                 {

@@ -170,5 +170,11 @@ public static class ConfigurationExtensions
 
             return services;
         }
+
+        public IServiceCollection AddSubscriptionPlans(IConfiguration configuration)
+        {
+            services.Configure<SubscriptionPlanOptions>(configuration.GetSection("SubscriptionPlans"));
+            return services;
+        }
     }
 }

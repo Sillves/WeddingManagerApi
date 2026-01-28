@@ -8,6 +8,7 @@ public interface IGuestRepository
     Task<IEnumerable<Guest>> GetByWeddingIdAsync(Guid weddingId);
     Task<IEnumerable<Guest>> GetByIdsAsync(Guid weddingId, IEnumerable<Guid> guestIds);
     Task<Guest?> GetByEmailAsync(Guid weddingId, string email);
+    Task<int> CountByWeddingIdAsync(Guid weddingId);
     Task AddAsync(Guest guest);
     Task UpdateAsync(Guest guest);
     Task DeleteAsync(Guid id);

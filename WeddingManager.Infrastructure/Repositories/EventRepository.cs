@@ -49,6 +49,11 @@ public class EventRepository(WeddingDbContext context, IUserContextService userC
         await context.SaveChangesAsync();
     }
 
+    public async Task<int> CountByWeddingIdAsync(Guid weddingId)
+    {
+        return await context.Events.CountAsync(e => e.WeddingId == weddingId);
+    }
+
     public async Task DeleteAsync(Guid id)
     {
         var eventToDelete = await context.Events.FindAsync(id);

@@ -1,4 +1,5 @@
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 
@@ -25,6 +26,10 @@ public class SendGuestInvitationsEndpoint : IEndpoint
                     {
                         return Results.BadRequest(new { error = ex.Message });
                     }
+                    catch (SubscriptionLimitExceededException ex)
+                    {
+                        return Results.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden);
+                    }
                     catch (InvalidOperationException ex)
                     {
                         return Results.Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
@@ -37,6 +42,7 @@ public class SendGuestInvitationsEndpoint : IEndpoint
             .RequireRateLimiting("InvitationSend")
             .Produces<InvitationSendResultDto>(200)
             .Produces(400)
+            .Produces(403)
             .Produces(404)
             .Produces(429)
             .Produces(500);

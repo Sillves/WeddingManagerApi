@@ -35,6 +35,11 @@ public class GuestRepository(WeddingDbContext context) : IGuestRepository
             .FirstOrDefaultAsync(g => g.WeddingId == weddingId && g.Email == email);
     }
 
+    public async Task<int> CountByWeddingIdAsync(Guid weddingId)
+    {
+        return await context.Guests.CountAsync(g => g.WeddingId == weddingId);
+    }
+
     public async Task AddAsync(Guest guest)
     {
         await context.Guests.AddAsync(guest);

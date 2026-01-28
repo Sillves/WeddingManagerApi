@@ -113,6 +113,8 @@ POST   /api/weddings/{weddingId}/guests # Add guest to wedding
 GET    /api/guests/{guestId}            # Get guest by id
 PUT    /api/guests/{guestId}            # Update guest
 DELETE /api/guests/{guestId}            # Remove guest
+POST   /api/weddings/{weddingId}/guests/{guestId}/send-invitation # Send single invitation
+POST   /api/weddings/{weddingId}/guests/send-invitations          # Send batch invitations
 ```
 
 ### Events
@@ -263,6 +265,25 @@ ASPNETCORE_URLS             # Binding URL (default: http://+:8080)
 DatabaseSettings__ConnectionString # PostgreSQL connection string
 ```
 
+## Subscription Limits
+
+Subscription limits are configured per tier in `WeddingManager.Web/appsettings.json` and `WeddingManager.Web/appsettings.Development.json`.
+
+```json
+"SubscriptionPlans": {
+  "Plans": {
+    "Free": { "MaxGuests": 50, "MaxEvents": 5, "MaxEmailsPerMonth": 100 },
+    "Starter": { "MaxGuests": 200, "MaxEvents": 20, "MaxEmailsPerMonth": 500 },
+    "Pro": { "MaxGuests": -1, "MaxEvents": -1, "MaxEmailsPerMonth": -1 }
+  }
+}
+```
+
+Notes:
+- `-1` means unlimited.
+- Email usage is tracked per user per month in the `SubscriptionUsages` table.
+- Limits are enforced when creating guests/events and when sending invitations.
+
 ## Monitoring & Logging
 
 ### Docker Logs
@@ -313,6 +334,8 @@ curl -v https://amare.wedding/health
 ```bash
 # Update database schema locally
 ./Scripts/update-db.ps1
+# Add a migration locally
+./Scripts/add-migration.ps1 -Name AddSubscriptionLimits
 # Or on macOS/Linux
 ./Scripts/update-db.sh
 

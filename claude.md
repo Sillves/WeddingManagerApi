@@ -144,6 +144,20 @@ ASPNETCORE_URLS                 # Default: http://+:8080
 DatabaseSettings__ConnectionString # PostgreSQL connection string
 ```
 
+## Subscription Limits
+
+Subscription limits are configured in appsettings under `SubscriptionPlans`. Tiers map to enum values:
+- Free
+- Starter
+- Pro
+
+Each tier has limits:
+- MaxGuests
+- MaxEvents
+- MaxEmailsPerMonth
+
+Use `-1` for unlimited. Email usage is tracked per user per month in `SubscriptionUsages`.
+
 ## Docker Setup
 
 ### Multi-stage Dockerfile
@@ -272,6 +286,10 @@ dotnet test
 dotnet ef migrations add MigrationName --project WeddingManager.Infrastructure
 dotnet ef database update --project WeddingManager.Infrastructure
 
+# Scripts
+./Scripts/add-migration.ps1 -Name MigrationName
+./Scripts/update-db.ps1
+
 # Docker
 docker-compose up -d
 docker-compose logs -f api
@@ -289,6 +307,15 @@ docker system prune -a
 **Version:** 1.0.0
 **Status:** Production Ready ✅
 **Last Updated:** January 24, 2026
+
+## Next Steps
+
+1. Stop any running `WeddingManager.Web` process to avoid file locks.
+2. Add and apply the subscription limits migration:
+   - `./Scripts/add-migration.ps1 -Name AddSubscriptionLimits`
+   - `./Scripts/update-db.ps1`
+3. Decide Stripe plan mapping and update `User.SubscriptionTier` on upgrade.
+4. Add Stripe checkout + webhook endpoints to manage tier upgrades.
 
 ---
 

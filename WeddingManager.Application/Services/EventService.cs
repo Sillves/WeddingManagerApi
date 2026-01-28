@@ -6,11 +6,16 @@ using WeddingManager.Domain.Interfaces;
 
 namespace WeddingManager.Application.Services;
 
-public class EventService(IEventRepository eventRepository, IMapper mapper) : IEventService
+public class EventService(
+    IEventRepository eventRepository,
+    ISubscriptionLimitService subscriptionLimitService,
+    IMapper mapper) : IEventService
 {
     public async Task<EventDto> CreateEventAsync(Guid weddingId, CreateEventRequestDto requestDto)
     {
         EventValidation.ValidateInput(requestDto);
+
+        await subscriptionLimitService.EnsureEventLimitAsync(weddingId);
 
         var @event = mapper.Map<Event>(requestDto);
         @event.Id = Guid.NewGuid();

@@ -1,4 +1,5 @@
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 
@@ -19,6 +20,10 @@ public class CreateEventEndpoint : IEndpoint
                     catch (ArgumentException ex)
                     {
                         return Results.BadRequest(new { error = ex.Message });
+                    }
+                    catch (SubscriptionLimitExceededException ex)
+                    {
+                        return Results.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden);
                     }
                 })
             .WithTags("Events")

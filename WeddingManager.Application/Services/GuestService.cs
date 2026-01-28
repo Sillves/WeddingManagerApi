@@ -12,6 +12,7 @@ public class GuestService(
     IGuestRepository guestRepository,
     IWeddingRepository weddingRepository,
     IEmailService emailService,
+    ISubscriptionLimitService subscriptionLimitService,
     IMapper mapper,
     ILogger<GuestService> logger)
     : IGuestService
@@ -34,6 +35,8 @@ public class GuestService(
     public async Task<GuestDto> CreateGuestAsync(Guid weddingId, CreateGuestRequestDto requestDto)
     {
         GuestValidation.ValidateInput(requestDto);
+
+        await subscriptionLimitService.EnsureGuestLimitAsync(weddingId);
 
         var existingGuest = await guestRepository.GetByEmailAsync(weddingId, requestDto.Email);
         if (existingGuest != null)
@@ -119,6 +122,7 @@ public class GuestService(
             throw new ArgumentException("Guest does not belong to this wedding");
         }
 
+        await subscriptionLimitService.EnsureEmailLimitAsync(weddingId, 1);
         await EnsureInvitationTokenAsync(guest);
 
         try
@@ -126,6 +130,7 @@ public class GuestService(
             await emailService.SendInvitationAsync(guest, wedding);
             guest.InvitationSentAt = DateTime.UtcNow;
             await guestRepository.UpdateAsync(guest);
+            await subscriptionLimitService.RecordEmailsSentAsync(wedding.UserId, 1);
         }
         catch (Exception ex)
         {
@@ -161,7 +166,10 @@ public class GuestService(
             return new InvitationSendResultDto();
         }
 
+        await subscriptionLimitService.EnsureEmailLimitAsync(weddingId, guests.Count);
+
         var result = new InvitationSendResultDto();
+        var sentForUsage = 0;
 
         foreach (var guest in guests)
         {
@@ -172,6 +180,7 @@ public class GuestService(
                 guest.InvitationSentAt = DateTime.UtcNow;
                 await guestRepository.UpdateAsync(guest);
                 result.SentCount++;
+                sentForUsage++;
             }
             catch (Exception ex)
             {
@@ -179,6 +188,11 @@ public class GuestService(
                 result.FailedCount++;
                 result.FailedGuestIds.Add(guest.Id);
             }
+        }
+
+        if (sentForUsage > 0)
+        {
+            await subscriptionLimitService.RecordEmailsSentAsync(wedding.UserId, sentForUsage);
         }
 
         return result;

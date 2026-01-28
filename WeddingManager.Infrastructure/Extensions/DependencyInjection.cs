@@ -58,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<IGuestRepository, GuestRepository>();
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IWeddingUserRepository, WeddingUserRepository>();
+        services.AddScoped<ISubscriptionUsageRepository, SubscriptionUsageRepository>();
         return services;
     }
 }

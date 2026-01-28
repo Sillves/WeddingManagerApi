@@ -12,6 +12,7 @@ public interface IEventRepository
     Task AddAsync(Event @event);
     Task UpdateAsync(Event @event);
     Task DeleteAsync(Guid id);
+    Task<int> CountByWeddingIdAsync(Guid weddingId);
     Task<EventGuestChangeResult> AddGuestToEventAsync(Guid eventId, Guid guestId);
     Task<EventGuestBatchChangeResultDto> AddGuestsToEventAsync(Guid eventId, IReadOnlyCollection<Guid> guestIds);
     Task<EventGuestChangeResult> RemoveGuestFromEventAsync(Guid eventId, Guid guestId);
