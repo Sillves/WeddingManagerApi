@@ -97,11 +97,11 @@ public class GuestService(
 
         await guestRepository.UpdateAsync(guest);
 
-        var wedding = await weddingRepository.GetByIdAsync(weddingId);
-        if (wedding != null)
-        {
-            await emailService.SendRsvpConfirmationAsync(guest, wedding);
-        }
+        // var wedding = await weddingRepository.GetByIdAsync(weddingId);
+        // if (wedding != null)
+        // {
+        //     await emailService.SendRsvpConfirmationAsync(guest, wedding);
+        // }
 
         return mapper.Map<GuestDto>(guest);
     }
