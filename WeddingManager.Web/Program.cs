@@ -12,7 +12,7 @@ builder.Services.AddDatabaseSettings(configuration, isDevelopment);
 builder.Services.AddSmtpSettings(configuration, isDevelopment);
 builder.Services.AddJwtSettings(configuration, isDevelopment);
 builder.Services.AddCorsPolicy(configuration, isDevelopment);
-builder.Services.AddFrontendSettings(configuration);
+builder.Services.AddFrontendSettings(configuration, isDevelopment);
 
 // Add services to the container.
 builder.Services.AddApplication();

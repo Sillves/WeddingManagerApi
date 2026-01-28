@@ -146,15 +146,25 @@ public static class ConfigurationExtensions
             return services;
         }
 
-        public IServiceCollection AddFrontendSettings(IConfiguration configuration)
+        public IServiceCollection AddFrontendSettings(IConfiguration configuration, bool isDevelopment)
         {
-            services.Configure<FrontendSettings>(configuration.GetSection("Frontend"));
+            if (isDevelopment)
+            {
+                services.Configure<FrontendSettings>(configuration.GetSection("Frontend"));
+            }
+            else
+            {
+                services.Configure<FrontendSettings>(options =>
+                {
+                    options.BaseUrl = configuration["Frontend__BaseUrl"] ?? throw new InvalidOperationException("No frontend base URL provided");
+                });
+            }
 
             services.PostConfigure<FrontendSettings>(options =>
             {
                 if (string.IsNullOrWhiteSpace(options.BaseUrl))
                 {
-                    throw new InvalidOperationException("No frontend base URL provided");
+                    throw new InvalidOperationException("No database connection string provided");
                 }
             });
 
