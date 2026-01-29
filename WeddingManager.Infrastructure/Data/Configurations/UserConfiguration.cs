@@ -12,5 +12,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
         builder.Property(e => e.LastName).IsRequired().HasMaxLength(100);
         builder.Property(e => e.SubscriptionTier).HasDefaultValue(SubscriptionTier.Free);
+        builder.Property(e => e.StripeCustomerId).HasMaxLength(255);
+        builder.Property(e => e.StripeSubscriptionId).HasMaxLength(255);
     }
 }

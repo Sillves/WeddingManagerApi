@@ -11,6 +11,7 @@ var configuration = builder.ConfigureAppConfiguration();
 builder.Services.AddDatabaseSettings(configuration, isDevelopment);
 builder.Services.AddSmtpSettings(configuration, isDevelopment);
 builder.Services.AddJwtSettings(configuration, isDevelopment);
+builder.Services.AddStripeSettings(configuration, isDevelopment);
 builder.Services.AddCorsPolicy(configuration, isDevelopment);
 builder.Services.AddFrontendSettings(configuration, isDevelopment);
 builder.Services.AddSubscriptionPlans(configuration);

@@ -23,4 +23,5 @@ public class SubscriptionPlanLimits
     public int MaxGuests { get; set; }
     public int MaxEvents { get; set; }
     public int MaxEmailsPerMonth { get; set; }
+    public List<string> Features { get; set; } = new();
 }

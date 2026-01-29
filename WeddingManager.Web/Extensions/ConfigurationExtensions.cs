@@ -122,6 +122,58 @@ public static class ConfigurationExtensions
             return services;
         }
 
+        public IServiceCollection AddStripeSettings(IConfiguration configuration, bool isDevelopment)
+        {
+            if (isDevelopment)
+            {
+                services.Configure<StripeSettings>(configuration.GetSection(nameof(StripeSettings)));
+            }
+            else
+            {
+                var json = configuration[nameof(StripeSettings)];
+                if (!string.IsNullOrWhiteSpace(json))
+                {
+                    var stripeSettings = JsonSerializer.Deserialize<StripeSettings>(
+                        json,
+                        JsonOptions
+                    ) ?? throw new InvalidOperationException("Invalid Stripe settings JSON");
+
+                    services.Configure<StripeSettings>(options =>
+                    {
+                        options.SecretKey = stripeSettings.SecretKey;
+                        options.WebhookSecret = stripeSettings.WebhookSecret;
+                        options.SuccessUrl = stripeSettings.SuccessUrl;
+                        options.CancelUrl = stripeSettings.CancelUrl;
+                        options.PortalReturnUrl = stripeSettings.PortalReturnUrl;
+                        options.Prices = stripeSettings.Prices;
+                    });
+                }
+                else
+                {
+                    services.Configure<StripeSettings>(options =>
+                    {
+                        options.SecretKey = configuration["StripeSettings__SecretKey"] ?? string.Empty;
+                        options.WebhookSecret = configuration["StripeSettings__WebhookSecret"] ?? string.Empty;
+                        options.SuccessUrl = configuration["StripeSettings__SuccessUrl"] ?? string.Empty;
+                        options.CancelUrl = configuration["StripeSettings__CancelUrl"] ?? string.Empty;
+                        options.PortalReturnUrl = configuration["StripeSettings__PortalReturnUrl"] ?? string.Empty;
+
+                        var pricesJson = configuration["StripeSettings__PricesJson"];
+                        if (!string.IsNullOrWhiteSpace(pricesJson))
+                        {
+                            options.Prices = JsonSerializer.Deserialize<Dictionary<string, StripePriceOptions>>(
+                                                 pricesJson,
+                                                 JsonOptions
+                                             ) ?? new Dictionary<string, StripePriceOptions>();
+                        }
+                    });
+                }
+            }
+
+            services.AddSingleton<IValidateOptions<StripeSettings>, StripeSettingsValidator>();
+            return services;
+        }
+
         public IServiceCollection AddCorsPolicy(IConfiguration configuration, bool isDevelopment)
         {
             // Only add CORS in development or if explicitly configured

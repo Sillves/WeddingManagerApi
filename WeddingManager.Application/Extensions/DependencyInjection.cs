@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IWeddingUserService, WeddingUserService>();
         services.AddScoped<ISubscriptionLimitService, SubscriptionLimitService>();
+        services.AddScoped<IBillingService, BillingService>();
         services.AddAutoMapper(cfg => 
         {
             cfg.AddProfile<MappingProfile>();
