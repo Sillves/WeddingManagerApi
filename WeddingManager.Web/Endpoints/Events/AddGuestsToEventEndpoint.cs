@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using WeddingManager.Domain.DTO;
-using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Events;
 
@@ -15,25 +17,21 @@ public class AddGuestsToEventEndpoint : IEndpoint
                 {
                     if (requestDto?.GuestIds.Count is null or 0)
                     {
-                        return Results.BadRequest(new { error = "GuestIds are required" });
+                        return Result.Fail(new Error(ErrorCodes.Validation, "GuestIds are required"))
+                            .ToErrorResult();
                     }
 
                     var result = await eventService.AddGuestsToEventAsync(eventId, requestDto.GuestIds);
-                    return result.Status switch
-                    {
-                        EventGuestChangeResult.NotFound => Results.NotFound(new { error = "Event not found" }),
-                        EventGuestChangeResult.Unauthorized => Results.Forbid(),
-                        _ => Results.Ok(result)
-                    };
+                    return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
                 })
             .WithTags("Events")
             .WithName("AddGuestsToEvent")
             .RequireAuthorization()
             .AddEndpointFilter<RequireEventAccessFilter>()
             .Produces<EventGuestBatchChangeResultDto>(200)
-            .Produces(400)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404);
+            .Produces<ErrorResponse>(400)
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404);
     }
 }

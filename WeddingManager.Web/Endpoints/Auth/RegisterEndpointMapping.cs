@@ -2,6 +2,7 @@ using System.Net;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
 using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Auth;
@@ -18,16 +19,16 @@ public class RegisterEndpoint : IEndpoint
                 request.LastName, 
                 request.Password);
 
-            if (!result.Success)
-                return Results.BadRequest(result);
+            if (!result.IsSuccess)
+                return result.ToErrorResult();
 
-            return Results.Created(string.Empty, result);
+            return Results.Created(string.Empty, result.Value);
         })
         .AddEndpointFilter<RequireRegistrationFilter>()
         .WithTags("Auth")
         .WithName("Register")
         .Produces<AuthResult>((int)HttpStatusCode.Created)
-        .Produces<AuthResult>((int)HttpStatusCode.Forbidden)
-        .Produces<AuthResult>((int)HttpStatusCode.BadRequest);
+        .Produces<ErrorResponse>((int)HttpStatusCode.Forbidden)
+        .Produces<ErrorResponse>((int)HttpStatusCode.BadRequest);
     }
 }

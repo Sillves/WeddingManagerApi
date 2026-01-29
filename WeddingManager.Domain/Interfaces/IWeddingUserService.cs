@@ -1,11 +1,12 @@
 
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Models;
 
 namespace WeddingManager.Domain.Interfaces;
 
 public interface IWeddingUserService
 {
-    Task<WeddingUserDto> AddUserToWeddingAsync(Guid weddingId, AddWeddingUserRequestDto requestDto);
-    Task<IEnumerable<WeddingUserDto>> GetWeddingUsersAsync(Guid weddingId);
-    Task RemoveUserFromWeddingAsync(Guid weddingId, Guid userId);
+    Task<Result<WeddingUserDto>> AddUserToWeddingAsync(Guid weddingId, AddWeddingUserRequestDto requestDto);
+    Task<Result<IEnumerable<WeddingUserDto>>> GetWeddingUsersAsync(Guid weddingId);
+    Task<Result> RemoveUserFromWeddingAsync(Guid weddingId, Guid userId);
 }

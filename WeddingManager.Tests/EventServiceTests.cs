@@ -5,6 +5,7 @@ using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 
 namespace WeddingManager.Tests;
 
@@ -53,11 +54,13 @@ public class EventServiceTests
 
         var result = await service.CreateEventAsync(weddingId, request);
 
-        Assert.NotEqual(Guid.Empty, result.Id);
-        Assert.Equal(weddingId, result.WeddingId);
-        Assert.Equal(request.Name, result.Name);
-        Assert.Equal(request.Location, result.Location);
-        Assert.Equal(request.Description, result.Description);
+        Assert.True(result.IsSuccess);
+        var dto = result.Value!;
+        Assert.NotEqual(Guid.Empty, dto.Id);
+        Assert.Equal(weddingId, dto.WeddingId);
+        Assert.Equal(request.Name, dto.Name);
+        Assert.Equal(request.Location, dto.Location);
+        Assert.Equal(request.Description, dto.Description);
         Assert.NotNull(captured);
         Assert.Equal(weddingId, captured!.WeddingId);
         repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Once);
@@ -69,7 +72,7 @@ public class EventServiceTests
         var repositoryMock = new Mock<IEventRepository>();
         var mapperMock = new Mock<IMapper>();
         var limitMock = new Mock<ISubscriptionLimitService>();
-        limitMock.Setup(l => l.EnsureEventLimitAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
+        limitMock.Setup(l => l.EnsureEventLimitAsync(It.IsAny<Guid>())).ReturnsAsync(Result.Ok());
 
         var service = CreateService(repositoryMock, mapperMock, limitMock);
         var weddingId = Guid.NewGuid();
@@ -86,8 +89,9 @@ public class EventServiceTests
         mapperMock.Setup(m => m.Map<EventDto>(It.IsAny<Event>()))
             .Returns(new EventDto { Id = Guid.NewGuid(), WeddingId = weddingId, Name = request.Name });
 
-        await service.CreateEventAsync(weddingId, request);
+        var result = await service.CreateEventAsync(weddingId, request);
 
+        Assert.True(result.IsSuccess);
         limitMock.Verify(l => l.EnsureEventLimitAsync(weddingId), Times.Once);
     }
 
@@ -141,11 +145,13 @@ public class EventServiceTests
 
         var result = await service.UpdateEventAsync(existing.Id, update);
 
-        Assert.Equal(update.Name, result.Name);
-        Assert.Equal(update.Location, result.Location);
-        Assert.Equal(update.Description, result.Description);
-        Assert.Equal(update.StartDate, result.StartDate);
-        Assert.Equal(update.EndDate, result.EndDate);
+        Assert.True(result.IsSuccess);
+        var dto = result.Value!;
+        Assert.Equal(update.Name, dto.Name);
+        Assert.Equal(update.Location, dto.Location);
+        Assert.Equal(update.Description, dto.Description);
+        Assert.Equal(update.StartDate, dto.StartDate);
+        Assert.Equal(update.EndDate, dto.EndDate);
         repositoryMock.Verify(r => r.UpdateAsync(It.Is<Event>(e =>
             e.Id == existing.Id &&
             e.Name == update.Name &&
@@ -171,8 +177,10 @@ public class EventServiceTests
             Location = "Bruges"
         };
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.UpdateEventAsync(Guid.NewGuid(), update));
+        var result = await service.UpdateEventAsync(Guid.NewGuid(), update);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.NotFound, result.Errors[0].Code);
         repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Event>()), Times.Never);
     }
 
@@ -188,10 +196,10 @@ public class EventServiceTests
         request.Name = name;
         request.Location = location;
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.CreateEventAsync(Guid.NewGuid(), request));
+        var result = await service.CreateEventAsync(Guid.NewGuid(), request);
 
-        Assert.Equal(message, exception.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, e => e.Message == message);
         repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
         mapperMock.Verify(m => m.Map<Event>(It.IsAny<CreateEventRequestDto>()), Times.Never);
     }
@@ -205,10 +213,10 @@ public class EventServiceTests
         var request = CreateValidCreateRequest();
         request.StartDate = default;
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.CreateEventAsync(Guid.NewGuid(), request));
+        var result = await service.CreateEventAsync(Guid.NewGuid(), request);
 
-        Assert.Equal("Event start date is required", exception.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, e => e.Message == "Event start date is required");
         repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
     }
 
@@ -221,10 +229,10 @@ public class EventServiceTests
         var request = CreateValidCreateRequest();
         request.EndDate = default;
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.CreateEventAsync(Guid.NewGuid(), request));
+        var result = await service.CreateEventAsync(Guid.NewGuid(), request);
 
-        Assert.Equal("Event end date is required", exception.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, e => e.Message == "Event end date is required");
         repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
     }
 
@@ -238,10 +246,10 @@ public class EventServiceTests
         request.StartDate = new DateTime(2026, 1, 2, 12, 0, 0, DateTimeKind.Utc);
         request.EndDate = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.CreateEventAsync(Guid.NewGuid(), request));
+        var result = await service.CreateEventAsync(Guid.NewGuid(), request);
 
-        Assert.Equal("Event end date must be on or after start date", exception.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, e => e.Message == "Event end date must be on or after start date");
         repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
     }
 
@@ -255,10 +263,10 @@ public class EventServiceTests
         update.StartDate = new DateTime(2026, 1, 2, 12, 0, 0, DateTimeKind.Utc);
         update.EndDate = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.UpdateEventAsync(Guid.NewGuid(), update));
+        var result = await service.UpdateEventAsync(Guid.NewGuid(), update);
 
-        Assert.Equal("Event end date must be on or after start date", exception.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, e => e.Message == "Event end date must be on or after start date");
         repositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
         repositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Event>()), Times.Never);
     }
@@ -303,10 +311,12 @@ public class EventServiceTests
             }).ToList());
         var service = CreateService(repositoryMock, mapperMock);
 
-        var result = (await service.GetByWeddingIdAsync(weddingId)).ToList();
+        var result = await service.GetByWeddingIdAsync(weddingId);
 
-        Assert.Single(result);
-        Assert.Equal(weddingId, result[0].WeddingId);
+        Assert.True(result.IsSuccess);
+        var list = result.Value!.ToList();
+        Assert.Single(list);
+        Assert.Equal(weddingId, list[0].WeddingId);
     }
 
     [Fact]
@@ -321,7 +331,8 @@ public class EventServiceTests
 
         var result = await service.AddGuestToEventAsync(Guid.NewGuid(), Guid.NewGuid());
 
-        Assert.Equal(EventGuestChangeResult.Unauthorized, result);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.Forbidden, result.Errors[0].Code);
     }
 
     [Fact]
@@ -341,7 +352,8 @@ public class EventServiceTests
 
         var result = await service.AddGuestsToEventAsync(Guid.NewGuid(), [Guid.NewGuid()]);
 
-        Assert.Same(expected, result);
+        Assert.True(result.IsSuccess);
+        Assert.Same(expected, result.Value);
     }
 
     [Fact]
@@ -356,7 +368,8 @@ public class EventServiceTests
 
         var result = await service.RemoveGuestFromEventAsync(Guid.NewGuid(), Guid.NewGuid());
 
-        Assert.Equal(EventGuestChangeResult.NotInEvent, result);
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.Conflict, result.Errors[0].Code);
     }
 
     [Fact]
@@ -376,7 +389,8 @@ public class EventServiceTests
 
         var result = await service.RemoveGuestsFromEventAsync(Guid.NewGuid(), [Guid.NewGuid()]);
 
-        Assert.Same(expected, result);
+        Assert.True(result.IsSuccess);
+        Assert.Same(expected, result.Value);
     }
 
     private static EventService CreateService(
@@ -387,7 +401,7 @@ public class EventServiceTests
         limitMock ??= new Mock<ISubscriptionLimitService>();
         limitMock
             .Setup(l => l.EnsureEventLimitAsync(It.IsAny<Guid>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(Result.Ok());
         return new EventService(repositoryMock.Object, limitMock.Object, mapperMock.Object);
     }
 

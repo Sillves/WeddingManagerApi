@@ -1,6 +1,8 @@
 using AutoMapper;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Weddings;
 
@@ -10,14 +12,19 @@ public class GetWeddings : IEndpoint
     {
         app.MapGet("/weddings", async (IWeddingService weddingService, IMapper mapper) =>
         {
-            var weddings = await weddingService.GetAllAsync();
-            var dtos = mapper.Map<IEnumerable<WeddingDto>>(weddings);
+            var result = await weddingService.GetAllAsync();
+            if (!result.IsSuccess)
+            {
+                return result.ToErrorResult();
+            }
+
+            var dtos = mapper.Map<IEnumerable<WeddingDto>>(result.Value);
             return Results.Ok(dtos);
         })
         .WithTags("Weddings")
         .WithName("GetWeddings")
         .RequireAuthorization()
         .Produces<IEnumerable<WeddingDto>>(200)
-        .Produces(401);
+        .Produces<ErrorResponse>(401);
     }
 }

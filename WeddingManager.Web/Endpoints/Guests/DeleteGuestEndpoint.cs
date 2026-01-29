@@ -1,5 +1,7 @@
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Guests;
 
@@ -10,27 +12,16 @@ public class DeleteGuestEndpoint : IEndpoint
         app.MapDelete("/guests/{guestId}", 
             async (Guid guestId, IGuestService guestService) =>
             {
-                try
-                {
-                    await guestService.DeleteGuestAsync(guestId);
-                    return Results.NoContent();
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.NotFound(new { error = ex.Message });
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return Results.Forbid();
-                }
+                var result = await guestService.DeleteGuestAsync(guestId);
+                return result.IsSuccess ? Results.NoContent() : result.ToErrorResult();
             })
             .WithTags("Guests")
             .WithName("DeleteGuest")
             .RequireAuthorization()
             .AddEndpointFilter<RequireGuestAccessFilter>()
             .Produces(204)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404);
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404);
     }
 }

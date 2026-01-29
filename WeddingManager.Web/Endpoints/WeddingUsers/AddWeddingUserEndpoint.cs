@@ -1,5 +1,7 @@
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.WeddingUsers;
 
@@ -10,30 +12,21 @@ public class AddWeddingUserEndpoint : IEndpoint
         app.MapPost("/weddings/{weddingId}/users", 
             async (Guid weddingId, AddWeddingUserRequestDto requestDto, IWeddingUserService weddingUserService) =>
             {
-                try
+                var result = await weddingUserService.AddUserToWeddingAsync(weddingId, requestDto);
+                if (!result.IsSuccess)
                 {
-                    var weddingUser = await weddingUserService.AddUserToWeddingAsync(weddingId, requestDto);
-                    return Results.Created($"/api/weddings/{weddingId}/users/{weddingUser.UserId}", weddingUser);
+                    return result.ToErrorResult();
                 }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { error = ex.Message });
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return Results.Forbid();
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return Results.BadRequest(new { error = ex.Message });
-                }
+
+                var weddingUser = result.Value!;
+                return Results.Created($"/api/weddings/{weddingId}/users/{weddingUser.UserId}", weddingUser);
             })
             .WithTags("WeddingUsers")
             .WithName("AddWeddingUser")
             .RequireAuthorization()
             .Produces<WeddingUserDto>(201)
-            .Produces(400)
-            .Produces(401)
-            .Produces(403);
+            .Produces<ErrorResponse>(400)
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403);
     }
 }

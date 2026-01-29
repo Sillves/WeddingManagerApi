@@ -1,6 +1,7 @@
-using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Events;
 
@@ -12,24 +13,22 @@ public class AddGuestToEventEndpoint : IEndpoint
                 async (Guid eventId, Guid guestId, IEventService eventService) =>
                 {
                     var result = await eventService.AddGuestToEventAsync(eventId, guestId);
-                    return result switch
+                    if (!result.IsSuccess)
                     {
-                        EventGuestChangeResult.Added => Results.Ok(),
-                        EventGuestChangeResult.AlreadyExists => Results.Conflict(new { error = "Guest already added to event" }),
-                        EventGuestChangeResult.NotFound => Results.NotFound(new { error = "Event or guest not found" }),
-                        EventGuestChangeResult.Unauthorized => Results.Forbid(),
-                        _ => Results.BadRequest()
-                    };
+                        return result.ToErrorResult();
+                    }
+
+                    return Results.Ok(result.Value);
                 })
             .WithTags("Events")
             .WithName("AddGuestToEvent")
             .RequireAuthorization()
             .AddEndpointFilter<RequireEventAccessFilter>()
             .Produces(200)
-            .Produces(400)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404)
-            .Produces(409);
+            .Produces<ErrorResponse>(400)
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404)
+            .Produces<ErrorResponse>(409);
     }
 }

@@ -1,50 +1,63 @@
 
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Models;
 
 namespace WeddingManager.Application.Services;
 
 public static class GuestValidation
 {
-    public static void ValidateInput(CreateGuestRequestDto requestDto)
+    public static Result ValidateInput(CreateGuestRequestDto requestDto)
     {
+        var errors = new List<Error>();
+
         if (string.IsNullOrWhiteSpace(requestDto.Name))
-            throw new ArgumentException("Guest name is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest name is required"));
 
         if (string.IsNullOrWhiteSpace(requestDto.Email))
-            throw new ArgumentException("Guest email is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest email is required"));
 
         if (!IsValidEmail(requestDto.Email))
-            throw new ArgumentException("Guest email is not valid");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest email is not valid"));
 
         if (!IsSupportedLanguage(requestDto.PreferredLanguage))
-            throw new ArgumentException("Guest language is not supported");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest language is not supported"));
+
+        return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();
     }
 
-    public static void ValidateInput(UpdateGuestRequestDto requestDto)
+    public static Result ValidateInput(UpdateGuestRequestDto requestDto)
     {
+        var errors = new List<Error>();
+
         if (string.IsNullOrWhiteSpace(requestDto.Name))
-            throw new ArgumentException("Guest name is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest name is required"));
 
         if (string.IsNullOrWhiteSpace(requestDto.Email))
-            throw new ArgumentException("Guest email is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest email is required"));
 
         if (!IsValidEmail(requestDto.Email))
-            throw new ArgumentException("Guest email is not valid");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest email is not valid"));
 
         if (!IsSupportedLanguage(requestDto.PreferredLanguage))
-            throw new ArgumentException("Guest language is not supported");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest language is not supported"));
+
+        return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();
     }
 
-    public static void ValidateInput(RsvpSubmitRequestDto requestDto)
+    public static Result ValidateInput(RsvpSubmitRequestDto requestDto)
     {
+        var errors = new List<Error>();
+
         if (string.IsNullOrWhiteSpace(requestDto.Name))
-            throw new ArgumentException("Guest name is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest name is required"));
 
         if (string.IsNullOrWhiteSpace(requestDto.Email))
-            throw new ArgumentException("Guest email is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest email is required"));
 
         if (!IsValidEmail(requestDto.Email))
-            throw new ArgumentException("Guest email is not valid");
+            errors.Add(new Error(ErrorCodes.Validation, "Guest email is not valid"));
+
+        return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();
     }
 
     private static bool IsValidEmail(string email)

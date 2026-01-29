@@ -1,5 +1,7 @@
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Events;
 
@@ -10,13 +12,13 @@ public class GetEventsEndpoint : IEndpoint
         app.MapGet("/events",
                 async (IEventService eventService) =>
                 {
-                    var events = await eventService.GetAllAsync();
-                    return Results.Ok(events);
+                    var result = await eventService.GetAllAsync();
+                    return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
                 })
             .WithTags("Events")
             .WithName("GetEvents")
             .RequireAuthorization()
             .Produces<IEnumerable<EventDto>>(200)
-            .Produces(401);
+            .Produces<ErrorResponse>(401);
     }
 }

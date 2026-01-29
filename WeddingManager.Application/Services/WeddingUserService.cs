@@ -3,6 +3,7 @@ using AutoMapper;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 
 namespace WeddingManager.Application.Services;
 
@@ -11,11 +12,14 @@ public class WeddingUserService(
     IMapper mapper)
     : IWeddingUserService
 {
-    public async Task<WeddingUserDto> AddUserToWeddingAsync(Guid weddingId, AddWeddingUserRequestDto requestDto)
+    public async Task<Result<WeddingUserDto>> AddUserToWeddingAsync(Guid weddingId, AddWeddingUserRequestDto requestDto)
     {
         var existingUser = await weddingUserRepository.GetByIdAsync(weddingId, requestDto.UserId);
         if (existingUser != null)
-            throw new InvalidOperationException("User is already added to this wedding");
+        {
+            return Result<WeddingUserDto>.Fail(
+                new Error(ErrorCodes.Conflict, "User is already added to this wedding"));
+        }
 
         var weddingUser = new WeddingUser
         {
@@ -26,21 +30,24 @@ public class WeddingUserService(
         };
 
         await weddingUserRepository.AddAsync(weddingUser);
-        return mapper.Map<WeddingUserDto>(weddingUser);
+        return Result<WeddingUserDto>.Ok(mapper.Map<WeddingUserDto>(weddingUser));
     }
 
-    public async Task<IEnumerable<WeddingUserDto>> GetWeddingUsersAsync(Guid weddingId)
+    public async Task<Result<IEnumerable<WeddingUserDto>>> GetWeddingUsersAsync(Guid weddingId)
     {
         var users = await weddingUserRepository.GetByWeddingIdAsync(weddingId);
-        return mapper.Map<IEnumerable<WeddingUserDto>>(users);
+        return Result<IEnumerable<WeddingUserDto>>.Ok(mapper.Map<IEnumerable<WeddingUserDto>>(users));
     }
 
-    public async Task RemoveUserFromWeddingAsync(Guid weddingId, Guid userId)
+    public async Task<Result> RemoveUserFromWeddingAsync(Guid weddingId, Guid userId)
     {
         var weddingUser = await weddingUserRepository.GetByIdAsync(weddingId, userId);
         if (weddingUser == null)
-            throw new ArgumentException("User is not part of this wedding");
+        {
+            return Result.Fail(new Error(ErrorCodes.NotFound, "User is not part of this wedding"));
+        }
 
         await weddingUserRepository.DeleteAsync(weddingId, userId);
+        return Result.Ok();
     }
 }

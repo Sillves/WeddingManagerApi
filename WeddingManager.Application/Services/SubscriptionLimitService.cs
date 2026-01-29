@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using WeddingManager.Domain.Entities;
-using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 using WeddingManager.Domain.Utils;
 
 namespace WeddingManager.Application.Services;
@@ -14,73 +14,115 @@ public class SubscriptionLimitService(
     IOptions<SubscriptionPlanOptions> planOptions)
     : ISubscriptionLimitService
 {
-    public async Task EnsureGuestLimitAsync(Guid weddingId)
+    public async Task<Result> EnsureGuestLimitAsync(Guid weddingId)
     {
-        var wedding = await GetWeddingAsync(weddingId);
-        var limits = planOptions.Value.GetLimits(wedding.User.SubscriptionTier);
+        var weddingResult = await GetWeddingAsync(weddingId);
+        if (!weddingResult.IsSuccess)
+        {
+            return Result.Fail(weddingResult.Errors);
+        }
+
+        var limitsResult = GetLimits(weddingResult.Value!);
+        if (!limitsResult.IsSuccess)
+        {
+            return Result.Fail(limitsResult.Errors);
+        }
+
+        var limits = limitsResult.Value!;
 
         if (limits.MaxGuests < 0)
         {
-            return;
+            return Result.Ok();
         }
 
         var count = await guestRepository.CountByWeddingIdAsync(weddingId);
         if (count >= limits.MaxGuests)
         {
-            throw new SubscriptionLimitExceededException(
-                $"Guest limit reached for the {wedding.User.SubscriptionTier} plan.");
+            return Result.Fail(new Error(
+                ErrorCodes.LimitExceeded,
+                $"Guest limit reached for the {weddingResult.Value!.User.SubscriptionTier} plan."));
         }
+
+        return Result.Ok();
     }
 
-    public async Task EnsureEventLimitAsync(Guid weddingId)
+    public async Task<Result> EnsureEventLimitAsync(Guid weddingId)
     {
-        var wedding = await GetWeddingAsync(weddingId);
-        var limits = planOptions.Value.GetLimits(wedding.User.SubscriptionTier);
+        var weddingResult = await GetWeddingAsync(weddingId);
+        if (!weddingResult.IsSuccess)
+        {
+            return Result.Fail(weddingResult.Errors);
+        }
+
+        var limitsResult = GetLimits(weddingResult.Value!);
+        if (!limitsResult.IsSuccess)
+        {
+            return Result.Fail(limitsResult.Errors);
+        }
+
+        var limits = limitsResult.Value!;
 
         if (limits.MaxEvents < 0)
         {
-            return;
+            return Result.Ok();
         }
 
         var count = await eventRepository.CountByWeddingIdAsync(weddingId);
         if (count >= limits.MaxEvents)
         {
-            throw new SubscriptionLimitExceededException(
-                $"Event limit reached for the {wedding.User.SubscriptionTier} plan.");
+            return Result.Fail(new Error(
+                ErrorCodes.LimitExceeded,
+                $"Event limit reached for the {weddingResult.Value!.User.SubscriptionTier} plan."));
         }
+
+        return Result.Ok();
     }
 
-    public async Task EnsureEmailLimitAsync(Guid weddingId, int emailCount)
+    public async Task<Result> EnsureEmailLimitAsync(Guid weddingId, int emailCount)
     {
         if (emailCount <= 0)
         {
-            return;
+            return Result.Ok();
         }
 
-        var wedding = await GetWeddingAsync(weddingId);
-        var limits = planOptions.Value.GetLimits(wedding.User.SubscriptionTier);
+        var weddingResult = await GetWeddingAsync(weddingId);
+        if (!weddingResult.IsSuccess)
+        {
+            return Result.Fail(weddingResult.Errors);
+        }
+
+        var limitsResult = GetLimits(weddingResult.Value!);
+        if (!limitsResult.IsSuccess)
+        {
+            return Result.Fail(limitsResult.Errors);
+        }
+
+        var limits = limitsResult.Value!;
 
         if (limits.MaxEmailsPerMonth < 0)
         {
-            return;
+            return Result.Ok();
         }
 
         var (year, month) = GetPeriod();
-        var usage = await subscriptionUsageRepository.GetByPeriodAsync(wedding.UserId, year, month);
+        var usage = await subscriptionUsageRepository.GetByPeriodAsync(weddingResult.Value!.UserId, year, month);
         var current = usage?.EmailsSent ?? 0;
 
         if (current + emailCount > limits.MaxEmailsPerMonth)
         {
-            throw new SubscriptionLimitExceededException(
-                $"Monthly email limit reached for the {wedding.User.SubscriptionTier} plan.");
+            return Result.Fail(new Error(
+                ErrorCodes.LimitExceeded,
+                $"Monthly email limit reached for the {weddingResult.Value!.User.SubscriptionTier} plan."));
         }
+
+        return Result.Ok();
     }
 
-    public async Task RecordEmailsSentAsync(Guid userId, int emailCount)
+    public async Task<Result> RecordEmailsSentAsync(Guid userId, int emailCount)
     {
         if (emailCount <= 0)
         {
-            return;
+            return Result.Ok();
         }
 
         var (year, month) = GetPeriod();
@@ -97,17 +139,33 @@ public class SubscriptionLimitService(
                 EmailsSent = emailCount
             };
             await subscriptionUsageRepository.AddAsync(usage);
-            return;
+            return Result.Ok();
         }
 
         usage.EmailsSent += emailCount;
         await subscriptionUsageRepository.UpdateAsync(usage);
+        return Result.Ok();
     }
 
-    private async Task<Wedding> GetWeddingAsync(Guid weddingId)
+    private async Task<Result<Wedding>> GetWeddingAsync(Guid weddingId)
     {
-        return await weddingRepository.GetByIdAsync(weddingId)
-               ?? throw new KeyNotFoundException("Wedding not found");
+        var wedding = await weddingRepository.GetByIdAsync(weddingId);
+        return wedding == null
+            ? Result<Wedding>.Fail(new Error(ErrorCodes.NotFound, "Wedding not found"))
+            : Result<Wedding>.Ok(wedding);
+    }
+
+    private Result<SubscriptionPlanLimits> GetLimits(Wedding wedding)
+    {
+        try
+        {
+            return Result<SubscriptionPlanLimits>.Ok(planOptions.Value.GetLimits(wedding.User.SubscriptionTier));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Result<SubscriptionPlanLimits>.Fail(
+                new Error(ErrorCodes.Unexpected, ex.Message));
+        }
     }
 
     private static (int Year, int Month) GetPeriod()

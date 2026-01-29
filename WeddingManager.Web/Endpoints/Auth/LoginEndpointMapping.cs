@@ -1,6 +1,7 @@
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
 using WeddingManager.Web.Models;
+using WeddingManager.Web.Extensions;
 
 namespace WeddingManager.Web.Endpoints.Auth;
 
@@ -12,14 +13,14 @@ public class LoginEndpoint : IEndpoint
         {
             var result = await authService.LoginAsync(request.Email, request.Password);
 
-            if (!result.Success)
-                return Results.Unauthorized();
+            if (!result.IsSuccess)
+                return result.ToErrorResult();
 
-            return Results.Ok(result);
+            return Results.Ok(result.Value);
         })
         .WithTags("Auth")
         .WithName("Login")
         .Produces<AuthResult>(200)
-        .Produces(401);
+        .Produces<ErrorResponse>(401);
     }
 }

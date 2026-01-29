@@ -1,34 +1,39 @@
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Models;
 
 namespace WeddingManager.Application.Services;
 
 public static class EventValidation
 {
-    public static void ValidateInput(CreateEventRequestDto requestDto)
+    public static Result ValidateInput(CreateEventRequestDto requestDto)
     {
-        ValidateInput(requestDto.Name, requestDto.Location, requestDto.StartDate, requestDto.EndDate);
+        return ValidateInput(requestDto.Name, requestDto.Location, requestDto.StartDate, requestDto.EndDate);
     }
 
-    public static void ValidateInput(UpdateEventRequestDto requestDto)
+    public static Result ValidateInput(UpdateEventRequestDto requestDto)
     {
-        ValidateInput(requestDto.Name, requestDto.Location, requestDto.StartDate, requestDto.EndDate);
+        return ValidateInput(requestDto.Name, requestDto.Location, requestDto.StartDate, requestDto.EndDate);
     }
 
-    private static void ValidateInput(string name, string location, DateTime startDate, DateTime endDate)
+    private static Result ValidateInput(string name, string location, DateTime startDate, DateTime endDate)
     {
+        var errors = new List<Error>();
+
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Event name is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Event name is required"));
 
         if (string.IsNullOrWhiteSpace(location))
-            throw new ArgumentException("Event location is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Event location is required"));
 
         if (startDate == default)
-            throw new ArgumentException("Event start date is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Event start date is required"));
 
         if (endDate == default)
-            throw new ArgumentException("Event end date is required");
+            errors.Add(new Error(ErrorCodes.Validation, "Event end date is required"));
 
         if (endDate < startDate)
-            throw new ArgumentException("Event end date must be on or after start date");
+            errors.Add(new Error(ErrorCodes.Validation, "Event end date must be on or after start date"));
+
+        return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();
     }
 }

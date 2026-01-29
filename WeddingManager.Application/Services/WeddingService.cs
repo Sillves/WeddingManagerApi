@@ -1,22 +1,47 @@
 ﻿using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 
 namespace WeddingManager.Application.Services;
 
 public class WeddingService(IWeddingRepository repository, IUserContextService userContextService) : IWeddingService
 {
-    public async Task<Wedding?> GetByIdAsync(Guid id) => await repository.GetByIdAsync(id);
-    public async Task<Wedding?> GetByIdOrSlugAsync(string idOrSlug) => await repository.GetByIdOrSlugAsync(idOrSlug);
-    public async Task UpdateAsync(Wedding wedding) => await repository.UpdateAsync(wedding);
-    public async Task DeleteAsync(Guid id) => await repository.DeleteAsync(id);
-    
-    public async Task<IEnumerable<Wedding>> GetAllAsync()
+    public async Task<Result<Wedding>> GetByIdAsync(Guid id)
     {
-        var userId = userContextService.GetUserId();
-        return await repository.GetAllAsync(userId);
+        var wedding = await repository.GetByIdAsync(id);
+        return wedding == null
+            ? Result<Wedding>.Fail(new Error(ErrorCodes.NotFound, $"Wedding with id {id} not found"))
+            : Result<Wedding>.Ok(wedding);
     }
 
-    public async Task AddAsync(Wedding wedding)
+    public async Task<Result<Wedding>> GetByIdOrSlugAsync(string idOrSlug)
+    {
+        var wedding = await repository.GetByIdOrSlugAsync(idOrSlug);
+        return wedding == null
+            ? Result<Wedding>.Fail(new Error(ErrorCodes.NotFound, $"Wedding {idOrSlug} not found"))
+            : Result<Wedding>.Ok(wedding);
+    }
+
+    public async Task<Result> UpdateAsync(Wedding wedding)
+    {
+        await repository.UpdateAsync(wedding);
+        return Result.Ok();
+    }
+
+    public async Task<Result> DeleteAsync(Guid id)
+    {
+        await repository.DeleteAsync(id);
+        return Result.Ok();
+    }
+    
+    public async Task<Result<IEnumerable<Wedding>>> GetAllAsync()
+    {
+        var userId = userContextService.GetUserId();
+        var weddings = await repository.GetAllAsync(userId);
+        return Result<IEnumerable<Wedding>>.Ok(weddings);
+    }
+
+    public async Task<Result> AddAsync(Wedding wedding)
     {
         wedding.Id = Guid.NewGuid();
         if (wedding.UserId == Guid.Empty)
@@ -27,6 +52,7 @@ public class WeddingService(IWeddingRepository repository, IUserContextService u
         wedding.Slug = GenerateSlug(wedding.Title);
         
         await repository.AddAsync(wedding);
+        return Result.Ok();
     }
     
     private static string GenerateSlug(string title)

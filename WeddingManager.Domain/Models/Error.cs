@@ -1,0 +1,3 @@
+namespace WeddingManager.Domain.Models;
+
+public sealed record Error(string Code, string Message);

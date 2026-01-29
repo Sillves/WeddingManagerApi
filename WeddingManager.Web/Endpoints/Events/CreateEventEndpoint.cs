@@ -1,7 +1,8 @@
 using WeddingManager.Domain.DTO;
-using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Events;
 
@@ -12,28 +13,24 @@ public class CreateEventEndpoint : IEndpoint
         app.MapPost("/weddings/{weddingId}/events",
                 async (Guid weddingId, CreateEventRequestDto requestDto, IEventService eventService) =>
                 {
-                    try
+                    var result = await eventService.CreateEventAsync(weddingId, requestDto);
+                    if (!result.IsSuccess)
                     {
-                        var @event = await eventService.CreateEventAsync(weddingId, requestDto);
-                        return Results.Created($"/api/events/{@event.Id}", @event);
+                        return result.ToErrorResult();
                     }
-                    catch (ArgumentException ex)
-                    {
-                        return Results.BadRequest(new { error = ex.Message });
-                    }
-                    catch (SubscriptionLimitExceededException ex)
-                    {
-                        return Results.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden);
-                    }
+
+                    var @event = result.Value!;
+                    return Results.Created($"/api/events/{@event.Id}", @event);
                 })
             .WithTags("Events")
             .WithName("CreateEvent")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
             .Produces<EventDto>(201)
-            .Produces(400)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404);
+            .Produces<ErrorResponse>(400)
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404)
+            .Produces<ErrorResponse>(500);
     }
 }

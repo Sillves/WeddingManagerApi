@@ -1,7 +1,8 @@
 using WeddingManager.Domain.DTO;
-using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Guests;
 
@@ -12,35 +13,23 @@ public class CreateGuestEndpoint : IEndpoint
         app.MapPost("/weddings/{weddingId}/guests", 
             async (Guid weddingId, CreateGuestRequestDto requestDto, IGuestService guestService) =>
             {
-                try
+                var result = await guestService.CreateGuestAsync(weddingId, requestDto);
+                if (!result.IsSuccess)
                 {
-                    var guest = await guestService.CreateGuestAsync(weddingId, requestDto);
-                    return Results.Created($"/api/guests/{guest.Id}", guest);
+                    return result.ToErrorResult();
                 }
-                catch (ArgumentException ex)
-                {
-                    return Results.BadRequest(new { error = ex.Message });
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return Results.Forbid();
-                }
-                catch (SubscriptionLimitExceededException ex)
-                {
-                    return Results.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return Results.BadRequest(new { error = ex.Message });
-                }
+
+                var guest = result.Value!;
+                return Results.Created($"/api/guests/{guest.Id}", guest);
             })
             .WithTags("Guests")
             .WithName("CreateGuest")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
             .Produces<GuestDto>(201)
-            .Produces(400)
-            .Produces(401)
-            .Produces(403);
+            .Produces<ErrorResponse>(400)
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(500);
     }
 }

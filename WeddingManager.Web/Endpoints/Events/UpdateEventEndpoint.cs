@@ -1,6 +1,8 @@
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Events;
 
@@ -11,28 +13,17 @@ public class UpdateEventEndpoint : IEndpoint
         app.MapPut("/events/{eventId}",
                 async (Guid eventId, UpdateEventRequestDto requestDto, IEventService eventService) =>
                 {
-                    try
-                    {
-                        var @event = await eventService.UpdateEventAsync(eventId, requestDto);
-                        return Results.Ok(@event);
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        return Results.BadRequest(new { error = ex.Message });
-                    }
-                    catch (KeyNotFoundException ex)
-                    {
-                        return Results.NotFound(new { error = ex.Message });
-                    }
+                    var result = await eventService.UpdateEventAsync(eventId, requestDto);
+                    return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
                 })
             .WithTags("Events")
             .WithName("UpdateEvent")
             .RequireAuthorization()
             .AddEndpointFilter<RequireEventAccessFilter>()
             .Produces<EventDto>(200)
-            .Produces(400)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404);
+            .Produces<ErrorResponse>(400)
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404);
     }
 }

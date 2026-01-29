@@ -1,6 +1,8 @@
 using AutoMapper;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Weddings;
 
@@ -11,13 +13,13 @@ public class GetWeddingPublicEndpoint : IEndpoint
         app.MapGet("/weddings/{idOrSlug}/public",
             async (string idOrSlug, IWeddingService weddingService, IMapper mapper) =>
             {
-                var wedding = await weddingService.GetByIdOrSlugAsync(idOrSlug);
-                if (wedding == null)
+                var result = await weddingService.GetByIdOrSlugAsync(idOrSlug);
+                if (!result.IsSuccess)
                 {
-                    return Results.NotFound();
+                    return result.ToErrorResult();
                 }
 
-                var dto = mapper.Map<WeddingPublicDto>(wedding);
+                var dto = mapper.Map<WeddingPublicDto>(result.Value);
                 return Results.Ok(dto);
             })
             .WithTags("Weddings")
@@ -25,7 +27,7 @@ public class GetWeddingPublicEndpoint : IEndpoint
             .AllowAnonymous()
             .RequireRateLimiting("PublicWedding")
             .Produces<WeddingPublicDto>(200)
-            .Produces(404)
-            .Produces(429);
+            .Produces<ErrorResponse>(404)
+            .Produces<ErrorResponse>(429);
     }
 }

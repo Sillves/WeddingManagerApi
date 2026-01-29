@@ -1,6 +1,8 @@
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Events;
 
@@ -11,16 +13,16 @@ public class GetEventsByWeddingEndpoint : IEndpoint
         app.MapGet("/weddings/{weddingId}/events",
                 async (Guid weddingId, IEventService eventService) =>
                 {
-                    var events = await eventService.GetByWeddingIdAsync(weddingId);
-                    return Results.Ok(events);
+                    var result = await eventService.GetByWeddingIdAsync(weddingId);
+                    return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
                 })
             .WithTags("Events")
             .WithName("GetEventsByWedding")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
             .Produces<IEnumerable<EventDto>>(200)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404);
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404);
     }
 }

@@ -3,8 +3,8 @@ using Moq;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
-using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 using WeddingManager.Domain.Utils;
 
 namespace WeddingManager.Tests;
@@ -21,8 +21,10 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, guestRepository: guestRepository);
 
-        await Assert.ThrowsAsync<SubscriptionLimitExceededException>(() =>
-            service.EnsureGuestLimitAsync(weddingId));
+        var result = await service.EnsureGuestLimitAsync(weddingId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.LimitExceeded, result.Errors[0].Code);
     }
 
     [Fact]
@@ -35,7 +37,8 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, guestRepository: guestRepository);
 
-        await service.EnsureGuestLimitAsync(weddingId);
+        var result = await service.EnsureGuestLimitAsync(weddingId);
+        Assert.True(result.IsSuccess);
         guestRepository.Verify(r => r.CountByWeddingIdAsync(weddingId), Times.Never);
     }
 
@@ -49,7 +52,8 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, guestRepository: guestRepository);
 
-        await service.EnsureGuestLimitAsync(weddingId);
+        var result = await service.EnsureGuestLimitAsync(weddingId);
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]
@@ -62,8 +66,10 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, eventRepository: eventRepository);
 
-        await Assert.ThrowsAsync<SubscriptionLimitExceededException>(() =>
-            service.EnsureEventLimitAsync(weddingId));
+        var result = await service.EnsureEventLimitAsync(weddingId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.LimitExceeded, result.Errors[0].Code);
     }
 
     [Fact]
@@ -76,7 +82,8 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, eventRepository: eventRepository);
 
-        await service.EnsureEventLimitAsync(weddingId);
+        var result = await service.EnsureEventLimitAsync(weddingId);
+        Assert.True(result.IsSuccess);
         eventRepository.Verify(r => r.CountByWeddingIdAsync(weddingId), Times.Never);
     }
 
@@ -92,8 +99,10 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, usageRepository: usageRepository);
 
-        await Assert.ThrowsAsync<SubscriptionLimitExceededException>(() =>
-            service.EnsureEmailLimitAsync(weddingId, 2));
+        var result = await service.EnsureEmailLimitAsync(weddingId, 2);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.LimitExceeded, result.Errors[0].Code);
     }
 
     [Fact]
@@ -105,7 +114,9 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, usageRepository: usageRepository);
 
-        await service.EnsureEmailLimitAsync(weddingId, 50);
+        var result = await service.EnsureEmailLimitAsync(weddingId, 50);
+
+        Assert.True(result.IsSuccess);
 
         usageRepository.Verify(r => r.GetByPeriodAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
@@ -122,7 +133,8 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, usageRepository: usageRepository);
 
-        await service.EnsureEmailLimitAsync(weddingId, 3);
+        var result = await service.EnsureEmailLimitAsync(weddingId, 3);
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]
@@ -134,7 +146,8 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, usageRepository: usageRepository);
 
-        await service.EnsureEmailLimitAsync(weddingId, 0);
+        var result = await service.EnsureEmailLimitAsync(weddingId, 0);
+        Assert.True(result.IsSuccess);
 
         usageRepository.Verify(r => r.GetByPeriodAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
@@ -150,7 +163,8 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(CreateWedding(Guid.NewGuid(), SubscriptionTier.Free), usageRepository: usageRepository);
 
-        await service.RecordEmailsSentAsync(userId, 3);
+        var result = await service.RecordEmailsSentAsync(userId, 3);
+        Assert.True(result.IsSuccess);
 
         usageRepository.Verify(r => r.AddAsync(It.Is<SubscriptionUsage>(u =>
             u.UserId == userId && u.EmailsSent == 3)), Times.Once);
@@ -164,7 +178,8 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(CreateWedding(Guid.NewGuid(), SubscriptionTier.Free), usageRepository: usageRepository);
 
-        await service.RecordEmailsSentAsync(userId, 0);
+        var result = await service.RecordEmailsSentAsync(userId, 0);
+        Assert.True(result.IsSuccess);
 
         usageRepository.Verify(r => r.GetByPeriodAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
@@ -186,7 +201,8 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(CreateWedding(Guid.NewGuid(), SubscriptionTier.Free), usageRepository: usageRepository);
 
-        await service.RecordEmailsSentAsync(userId, 4);
+        var result = await service.RecordEmailsSentAsync(userId, 4);
+        Assert.True(result.IsSuccess);
 
         usageRepository.Verify(r => r.UpdateAsync(It.Is<SubscriptionUsage>(u =>
             u.Id == usage.Id && u.EmailsSent == 6)), Times.Once);
@@ -203,8 +219,10 @@ public class SubscriptionLimitServiceTests
             CreateWedding(Guid.NewGuid(), SubscriptionTier.Free),
             weddingRepositoryOverride: weddingRepository);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.EnsureGuestLimitAsync(weddingId));
+        var result = await service.EnsureGuestLimitAsync(weddingId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.NotFound, result.Errors[0].Code);
     }
 
     [Fact]
@@ -218,8 +236,10 @@ public class SubscriptionLimitServiceTests
             CreateWedding(Guid.NewGuid(), SubscriptionTier.Free),
             weddingRepositoryOverride: weddingRepository);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.EnsureEventLimitAsync(weddingId));
+        var result = await service.EnsureEventLimitAsync(weddingId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.NotFound, result.Errors[0].Code);
     }
 
     [Fact]
@@ -233,8 +253,10 @@ public class SubscriptionLimitServiceTests
             CreateWedding(Guid.NewGuid(), SubscriptionTier.Free),
             weddingRepositoryOverride: weddingRepository);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.EnsureEmailLimitAsync(weddingId, 1));
+        var result = await service.EnsureEmailLimitAsync(weddingId, 1);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.NotFound, result.Errors[0].Code);
     }
 
     [Fact]
@@ -245,8 +267,10 @@ public class SubscriptionLimitServiceTests
 
         var service = CreateService(wedding, planOptionsOverride: Options.Create(new SubscriptionPlanOptions()));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.EnsureGuestLimitAsync(weddingId));
+        var result = await service.EnsureGuestLimitAsync(weddingId);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCodes.Unexpected, result.Errors[0].Code);
     }
 
     private static SubscriptionLimitService CreateService(

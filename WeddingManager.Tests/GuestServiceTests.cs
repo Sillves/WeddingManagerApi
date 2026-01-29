@@ -5,6 +5,7 @@ using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Domain.Models;
 
 namespace WeddingManager.Tests;
 
@@ -23,7 +24,7 @@ public class GuestServiceTests
         var weddingRepository = new Mock<IWeddingRepository>();
         var emailService = new Mock<IEmailService>();
         var limitService = new Mock<ISubscriptionLimitService>();
-        limitService.Setup(l => l.EnsureGuestLimitAsync(weddingId)).Returns(Task.CompletedTask);
+        limitService.Setup(l => l.EnsureGuestLimitAsync(weddingId)).ReturnsAsync(Result.Ok());
 
         var mapperMock = new Mock<IMapper>();
         mapperMock.Setup(m => m.Map<GuestDto>(It.IsAny<Guest>()))
@@ -55,10 +56,11 @@ public class GuestServiceTests
 
         var result = await service.CreateGuestAsync(weddingId, request);
 
+        Assert.True(result.IsSuccess);
         limitService.Verify(l => l.EnsureGuestLimitAsync(weddingId), Times.Once);
         repositoryMock.Verify(r => r.AddAsync(It.Is<Guest>(g =>
             g.WeddingId == weddingId && g.Email == request.Email)), Times.Once);
-        Assert.Equal(request.Email, result.Email);
+        Assert.Equal(request.Email, result.Value!.Email);
     }
 
     [Fact]
@@ -94,8 +96,8 @@ public class GuestServiceTests
         emailService.Setup(e => e.SendInvitationAsync(guest, wedding)).Returns(Task.CompletedTask);
 
         var limitService = new Mock<ISubscriptionLimitService>();
-        limitService.Setup(l => l.EnsureEmailLimitAsync(weddingId, 1)).Returns(Task.CompletedTask);
-        limitService.Setup(l => l.RecordEmailsSentAsync(userId, 1)).Returns(Task.CompletedTask);
+        limitService.Setup(l => l.EnsureEmailLimitAsync(weddingId, 1)).ReturnsAsync(Result.Ok());
+        limitService.Setup(l => l.RecordEmailsSentAsync(userId, 1)).ReturnsAsync(Result.Ok());
 
         var mapperMock = new Mock<IMapper>();
 
@@ -107,8 +109,9 @@ public class GuestServiceTests
             mapperMock.Object,
             Mock.Of<Microsoft.Extensions.Logging.ILogger<GuestService>>());
 
-        await service.SendInvitationAsync(weddingId, guestId);
+        var result = await service.SendInvitationAsync(weddingId, guestId);
 
+        Assert.True(result.IsSuccess);
         limitService.Verify(l => l.EnsureEmailLimitAsync(weddingId, 1), Times.Once);
         limitService.Verify(l => l.RecordEmailsSentAsync(userId, 1), Times.Once);
         emailService.Verify(e => e.SendInvitationAsync(guest, wedding), Times.Once);
@@ -161,8 +164,8 @@ public class GuestServiceTests
             .Returns(Task.CompletedTask);
 
         var limitService = new Mock<ISubscriptionLimitService>();
-        limitService.Setup(l => l.EnsureEmailLimitAsync(weddingId, guests.Count)).Returns(Task.CompletedTask);
-        limitService.Setup(l => l.RecordEmailsSentAsync(userId, guests.Count)).Returns(Task.CompletedTask);
+        limitService.Setup(l => l.EnsureEmailLimitAsync(weddingId, guests.Count)).ReturnsAsync(Result.Ok());
+        limitService.Setup(l => l.RecordEmailsSentAsync(userId, guests.Count)).ReturnsAsync(Result.Ok());
 
         var mapperMock = new Mock<IMapper>();
 
@@ -176,7 +179,8 @@ public class GuestServiceTests
 
         var result = await service.SendInvitationsAsync(weddingId, null);
 
-        Assert.Equal(guests.Count, result.SentCount);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(guests.Count, result.Value!.SentCount);
         limitService.Verify(l => l.EnsureEmailLimitAsync(weddingId, guests.Count), Times.Once);
         limitService.Verify(l => l.RecordEmailsSentAsync(userId, guests.Count), Times.Once);
     }
@@ -230,8 +234,8 @@ public class GuestServiceTests
             .ThrowsAsync(new InvalidOperationException("Boom"));
 
         var limitService = new Mock<ISubscriptionLimitService>();
-        limitService.Setup(l => l.EnsureEmailLimitAsync(weddingId, guests.Count)).Returns(Task.CompletedTask);
-        limitService.Setup(l => l.RecordEmailsSentAsync(userId, 1)).Returns(Task.CompletedTask);
+        limitService.Setup(l => l.EnsureEmailLimitAsync(weddingId, guests.Count)).ReturnsAsync(Result.Ok());
+        limitService.Setup(l => l.RecordEmailsSentAsync(userId, 1)).ReturnsAsync(Result.Ok());
 
         var mapperMock = new Mock<IMapper>();
 
@@ -245,8 +249,9 @@ public class GuestServiceTests
 
         var result = await service.SendInvitationsAsync(weddingId, null);
 
-        Assert.Equal(1, result.SentCount);
-        Assert.Equal(1, result.FailedCount);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value!.SentCount);
+        Assert.Equal(1, result.Value!.FailedCount);
         limitService.Verify(l => l.RecordEmailsSentAsync(userId, 1), Times.Once);
     }
 }

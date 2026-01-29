@@ -1,5 +1,7 @@
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Events;
 
@@ -10,23 +12,16 @@ public class DeleteEventEndpoint : IEndpoint
         app.MapDelete("/events/{eventId}",
                 async (Guid eventId, IEventService eventService) =>
                 {
-                    try
-                    {
-                        await eventService.DeleteEventAsync(eventId);
-                        return Results.NoContent();
-                    }
-                    catch (KeyNotFoundException ex)
-                    {
-                        return Results.NotFound(new { error = ex.Message });
-                    }
+                    var result = await eventService.DeleteEventAsync(eventId);
+                    return result.IsSuccess ? Results.NoContent() : result.ToErrorResult();
                 })
             .WithTags("Events")
             .WithName("DeleteEvent")
             .RequireAuthorization()
             .AddEndpointFilter<RequireEventAccessFilter>()
             .Produces(204)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404);
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404);
     }
 }

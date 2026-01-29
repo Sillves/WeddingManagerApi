@@ -1,6 +1,7 @@
-using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Guests;
 
@@ -11,27 +12,8 @@ public class SendGuestInvitationEndpoint : IEndpoint
         app.MapPost("/weddings/{weddingId}/guests/{guestId}/send-invitation",
                 async (Guid weddingId, Guid guestId, IGuestService guestService) =>
                 {
-                    try
-                    {
-                        await guestService.SendInvitationAsync(weddingId, guestId);
-                        return Results.Ok();
-                    }
-                    catch (KeyNotFoundException ex)
-                    {
-                        return Results.NotFound(new { error = ex.Message });
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        return Results.BadRequest(new { error = ex.Message });
-                    }
-                    catch (SubscriptionLimitExceededException ex)
-                    {
-                        return Results.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden);
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        return Results.Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
-                    }
+                    var result = await guestService.SendInvitationAsync(weddingId, guestId);
+                    return result.IsSuccess ? Results.Ok() : result.ToErrorResult();
                 })
             .WithTags("Guests")
             .WithName("SendGuestInvitation")
@@ -39,10 +21,11 @@ public class SendGuestInvitationEndpoint : IEndpoint
             .AddEndpointFilter<RequireWeddingAccessFilter>()
             .RequireRateLimiting("InvitationSend")
             .Produces(200)
-            .Produces(400)
-            .Produces(403)
-            .Produces(404)
-            .Produces(429)
-            .Produces(500);
+            .Produces<ErrorResponse>(400)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404)
+            .Produces<ErrorResponse>(429)
+            .Produces<ErrorResponse>(500)
+            .Produces<ErrorResponse>(502);
     }
 }

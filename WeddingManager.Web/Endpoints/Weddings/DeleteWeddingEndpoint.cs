@@ -1,4 +1,6 @@
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Weddings;
 
@@ -8,14 +10,14 @@ public class DeleteWeddingEndpoint : IEndpoint
     {
         app.MapDelete("/weddings/{id}", async (Guid id, IWeddingService weddingService) =>
         {
-            await weddingService.DeleteAsync(id);
-            return Results.NoContent();
+            var result = await weddingService.DeleteAsync(id);
+            return result.IsSuccess ? Results.NoContent() : result.ToErrorResult();
         })
         .WithTags("Weddings")
         .WithName("DeleteWedding")
         .RequireAuthorization()
         .Produces(204)
-        .Produces(401)
-        .Produces(404);
+        .Produces<ErrorResponse>(401)
+        .Produces<ErrorResponse>(404);
     }
 }

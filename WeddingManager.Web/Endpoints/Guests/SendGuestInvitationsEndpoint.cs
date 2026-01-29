@@ -1,7 +1,8 @@
 using WeddingManager.Domain.DTO;
-using WeddingManager.Domain.Exceptions;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.Guests;
 
@@ -12,28 +13,9 @@ public class SendGuestInvitationsEndpoint : IEndpoint
         app.MapPost("/weddings/{weddingId}/guests/send-invitations",
                 async (Guid weddingId, SendInvitationsRequestDto? requestDto, IGuestService guestService) =>
                 {
-                    try
-                    {
-                        var guestIds = requestDto?.GuestIds;
-                        var result = await guestService.SendInvitationsAsync(weddingId, guestIds);
-                        return Results.Ok(result);
-                    }
-                    catch (KeyNotFoundException ex)
-                    {
-                        return Results.NotFound(new { error = ex.Message });
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        return Results.BadRequest(new { error = ex.Message });
-                    }
-                    catch (SubscriptionLimitExceededException ex)
-                    {
-                        return Results.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden);
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        return Results.Problem(ex.Message, statusCode: StatusCodes.Status500InternalServerError);
-                    }
+                    var guestIds = requestDto?.GuestIds;
+                    var result = await guestService.SendInvitationsAsync(weddingId, guestIds);
+                    return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
                 })
             .WithTags("Guests")
             .WithName("SendGuestInvitations")
@@ -41,10 +23,11 @@ public class SendGuestInvitationsEndpoint : IEndpoint
             .AddEndpointFilter<RequireWeddingAccessFilter>()
             .RequireRateLimiting("InvitationSend")
             .Produces<InvitationSendResultDto>(200)
-            .Produces(400)
-            .Produces(403)
-            .Produces(404)
-            .Produces(429)
-            .Produces(500);
+            .Produces<ErrorResponse>(400)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404)
+            .Produces<ErrorResponse>(429)
+            .Produces<ErrorResponse>(500)
+            .Produces<ErrorResponse>(502);
     }
 }

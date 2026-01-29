@@ -1,5 +1,7 @@
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Extensions;
+using WeddingManager.Web.Models;
 
 namespace WeddingManager.Web.Endpoints.WeddingUsers;
 
@@ -10,26 +12,15 @@ public class GetWeddingUsersEndpoint : IEndpoint
         app.MapGet("/weddings/{weddingId}/users", 
             async (Guid weddingId, IWeddingUserService weddingUserService) =>
             {
-                try
-                {
-                    var users = await weddingUserService.GetWeddingUsersAsync(weddingId);
-                    return Results.Ok(users);
-                }
-                catch (ArgumentException ex)
-                {
-                    return Results.NotFound(new { error = ex.Message });
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return Results.Forbid();
-                }
+                var result = await weddingUserService.GetWeddingUsersAsync(weddingId);
+                return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
             })
             .WithTags("WeddingUsers")
             .WithName("GetWeddingUsers")
             .RequireAuthorization()
             .Produces<IEnumerable<WeddingUserDto>>(200)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404);
+            .Produces<ErrorResponse>(401)
+            .Produces<ErrorResponse>(403)
+            .Produces<ErrorResponse>(404);
     }
 }
