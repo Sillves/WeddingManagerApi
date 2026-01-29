@@ -142,6 +142,15 @@ DELETE /api/weddings/{weddingId}/users/{userId} # Remove user from wedding
 ```bash
 POST   /api/auth/register         # Register new user
 POST   /api/auth/login            # Login user
+GET    /api/auth/me               # Current user profile (includes subscription tier)
+```
+
+### Billing
+```bash
+GET    /api/billing/plans         # Subscription plans and pricing
+POST   /api/billing/checkout-session # Create Stripe Checkout session
+POST   /api/billing/portal-session   # Create Stripe Billing Portal session
+POST   /api/billing/webhook       # Stripe webhook receiver
 ```
 
 ## Deployment
@@ -265,6 +274,18 @@ ASPNETCORE_URLS             # Binding URL (default: http://+:8080)
 DatabaseSettings__ConnectionString # PostgreSQL connection string
 ```
 
+### Stripe
+
+```
+StripeSettings               # JSON string for Stripe settings in production
+StripeSettings__SecretKey    # Optional flat key override
+StripeSettings__WebhookSecret
+StripeSettings__SuccessUrl
+StripeSettings__CancelUrl
+StripeSettings__PortalReturnUrl
+StripeSettings__PricesJson   # JSON map of price IDs if using flat keys
+```
+
 ## Subscription Limits
 
 Subscription limits are configured per tier in `WeddingManager.Web/appsettings.json` and `WeddingManager.Web/appsettings.Development.json`.
@@ -272,9 +293,9 @@ Subscription limits are configured per tier in `WeddingManager.Web/appsettings.j
 ```json
 "SubscriptionPlans": {
   "Plans": {
-    "Free": { "MaxGuests": 50, "MaxEvents": 5, "MaxEmailsPerMonth": 100 },
-    "Starter": { "MaxGuests": 200, "MaxEvents": 20, "MaxEmailsPerMonth": 500 },
-    "Pro": { "MaxGuests": -1, "MaxEvents": -1, "MaxEmailsPerMonth": -1 }
+    "Free": { "MaxGuests": 50, "MaxEvents": 5, "MaxEmailsPerMonth": 100, "Features": [] },
+    "Starter": { "MaxGuests": 200, "MaxEvents": 20, "MaxEmailsPerMonth": 500, "Features": [] },
+    "Pro": { "MaxGuests": -1, "MaxEvents": -1, "MaxEmailsPerMonth": -1, "Features": [] }
   }
 }
 ```

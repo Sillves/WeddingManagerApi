@@ -76,6 +76,13 @@ WeddingManager.Domain/       # Domain models & entities - Core models
 ### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user profile (includes subscription tier)
+
+### Billing
+- `GET /api/billing/plans` - Get available subscription plans and pricing
+- `POST /api/billing/checkout-session` - Create Stripe Checkout session
+- `POST /api/billing/portal-session` - Create Stripe Billing Portal session
+- `POST /api/billing/webhook` - Stripe webhook receiver
 
 ## Development Workflow
 
@@ -144,6 +151,17 @@ ASPNETCORE_URLS                 # Default: http://+:8080
 DatabaseSettings__ConnectionString # PostgreSQL connection string
 ```
 
+### Stripe
+```
+StripeSettings               # JSON string for Stripe settings in production
+StripeSettings__SecretKey    # Optional flat key override
+StripeSettings__WebhookSecret
+StripeSettings__SuccessUrl
+StripeSettings__CancelUrl
+StripeSettings__PortalReturnUrl
+StripeSettings__PricesJson   # JSON map of price IDs if using flat keys
+```
+
 ## Subscription Limits
 
 Subscription limits are configured in appsettings under `SubscriptionPlans`. Tiers map to enum values:
@@ -155,6 +173,7 @@ Each tier has limits:
 - MaxGuests
 - MaxEvents
 - MaxEmailsPerMonth
+- Features (string keys for frontend translation)
 
 Use `-1` for unlimited. Email usage is tracked per user per month in `SubscriptionUsages`.
 
@@ -310,12 +329,11 @@ docker system prune -a
 
 ## Next Steps
 
-1. Stop any running `WeddingManager.Web` process to avoid file locks.
-2. Add and apply the subscription limits migration:
-   - `./Scripts/add-migration.ps1 -Name AddSubscriptionLimits`
-   - `./Scripts/update-db.ps1`
-3. Decide Stripe plan mapping and update `User.SubscriptionTier` on upgrade.
-4. Add Stripe checkout + webhook endpoints to manage tier upgrades.
+1. Apply the Stripe billing fields migration in production:
+   - `dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web`
+2. Configure live Stripe settings in Scaleway (SecretKey, WebhookSecret, SuccessUrl, CancelUrl, PortalReturnUrl, Prices).
+3. Create the live Stripe webhook endpoint with the required events.
+4. Deploy and validate `/api/billing/plans`, `/api/auth/me`, and Stripe webhook flow.
 
 ---
 
