@@ -24,7 +24,7 @@ public class RegisterEndpoint : IEndpoint
 
             return Results.Created(string.Empty, result.Value);
         })
-        .AddEndpointFilter<RequireRegistrationFilter>()
+        // .AddEndpointFilter<RequireRegistrationFilter>()
         .WithTags("Auth")
         .WithName("Register")
         .Produces<AuthResult>((int)HttpStatusCode.Created)
