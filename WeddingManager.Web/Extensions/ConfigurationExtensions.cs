@@ -225,6 +225,7 @@ public static class ConfigurationExtensions
 
         public IServiceCollection AddSubscriptionPlans(IConfiguration configuration)
         {
+            var subscriptionPlansJson = configuration["SubscriptionPlans"];
             services.Configure<SubscriptionPlanOptions>(configuration.GetSection("SubscriptionPlans"));
             return services;
         }

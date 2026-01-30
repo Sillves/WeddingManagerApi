@@ -225,11 +225,15 @@ public class BillingService(
     {
         var tiers = Enum.GetValues<SubscriptionTier>();
         var plans = new List<BillingPlanDto>();
+        var featureUniverse = BuildFeatureUniverse(tiers);
 
         foreach (var tier in tiers)
         {
             var limits = _subscriptionPlanOptions.GetLimits(tier);
             var prices = new List<BillingPlanPriceDto>();
+            var notIncluded = featureUniverse
+                .Where(feature => !limits.Features.Contains(feature, StringComparer.OrdinalIgnoreCase))
+                .ToList();
 
             foreach (var interval in new[] { BillingInterval.Monthly, BillingInterval.Annual, BillingInterval.Lifetime })
             {
@@ -250,6 +254,7 @@ public class BillingService(
                 tier,
                 tier.ToString(),
                 limits.Features,
+                notIncluded,
                 limits.MaxGuests,
                 limits.MaxEvents,
                 limits.MaxEmailsPerMonth,
@@ -257,6 +262,26 @@ public class BillingService(
         }
 
         return Result<IReadOnlyList<BillingPlanDto>>.Ok(plans);
+    }
+
+    private List<string> BuildFeatureUniverse(IEnumerable<SubscriptionTier> tiers)
+    {
+        var features = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var tier in tiers)
+        {
+            var limits = _subscriptionPlanOptions.GetLimits(tier);
+            foreach (var feature in limits.Features)
+            {
+                if (seen.Add(feature))
+                {
+                    features.Add(feature);
+                }
+            }
+        }
+
+        return features;
     }
 
     private async Task<Result> HandleCheckoutSessionCompletedAsync(StripeEvent stripeEvent)
