@@ -59,6 +59,7 @@ public static class DependencyInjection
         services.AddScoped<IEventRepository, EventRepository>();
         services.AddScoped<IWeddingUserRepository, WeddingUserRepository>();
         services.AddScoped<ISubscriptionUsageRepository, SubscriptionUsageRepository>();
+        services.AddScoped<IWeddingExpenseRepository, WeddingExpenseRepository>();
         return services;
     }
 }

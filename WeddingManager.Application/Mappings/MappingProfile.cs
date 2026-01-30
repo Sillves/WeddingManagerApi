@@ -28,6 +28,10 @@ public class MappingProfile : Profile
         CreateMap<WeddingUser, WeddingUserDto>()
             .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User.Email))
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => $"{src.User.FirstName} {src.User.LastName}"));
-        
+
+        // Expense mappings
+        CreateMap<WeddingExpense, WeddingExpenseDto>();
+        CreateMap<CreateWeddingExpenseRequestDto, WeddingExpense>();
+        CreateMap<UpdateWeddingExpenseRequestDto, WeddingExpense>();
     }
 }

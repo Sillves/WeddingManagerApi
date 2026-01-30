@@ -84,6 +84,14 @@ WeddingManager.Domain/       # Domain models & entities - Core models
 - `POST /api/billing/portal-session` - Create Stripe Billing Portal session
 - `POST /api/billing/webhook` - Stripe webhook receiver
 
+### Expenses (Budget Tracking)
+- `GET /api/weddings/{weddingId}/expenses` - Get all expenses for wedding
+- `GET /api/weddings/{weddingId}/expenses/summary` - Get expense summary with totals by category
+- `GET /api/expenses/{expenseId}` - Get expense by ID
+- `POST /api/weddings/{weddingId}/expenses` - Create new expense
+- `PUT /api/expenses/{expenseId}` - Update expense
+- `DELETE /api/expenses/{expenseId}` - Delete expense
+
 ## Development Workflow
 
 ### Local Development
