@@ -80,11 +80,6 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Install dotnet-ef
-        run: |
-          dotnet tool install --global dotnet-ef
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
       - name: Fetch DB connection string
         uses: scaleway/action-scw-secret@v0
         with:
@@ -98,10 +93,12 @@ jobs:
       - name: Export DB connection string
         run: echo "DatabaseSettings__ConnectionString=$DATABASESETTINGS__CONNECTIONSTRING" >> "$GITHUB_ENV"
 
-      - name: Apply migrations
+      - name: Install and apply migrations
         run: |
           dotnet restore
           dotnet build
+          dotnet tool install --global dotnet-ef
+          export PATH="$PATH:$HOME/.dotnet/tools"
           dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web
 
   deploy-to-vps:
