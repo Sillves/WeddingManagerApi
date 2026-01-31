@@ -56,6 +56,7 @@ public class BillingService(
             Mode = interval == BillingInterval.Lifetime ? "payment" : "subscription",
             SuccessUrl = _stripeSettings.SuccessUrl,
             CancelUrl = _stripeSettings.CancelUrl,
+            AllowPromotionCodes = true,
             ClientReferenceId = userId.ToString(),
             LineItems =
             [
