@@ -93,13 +93,16 @@ jobs:
       - name: Export DB connection string
         run: echo "DatabaseSettings__ConnectionString=$DATABASESETTINGS__CONNECTIONSTRING" >> "$GITHUB_ENV"
 
-      - name: Install and apply migrations
+      - name: Restore and build
         run: |
           dotnet restore
           dotnet build
-          dotnet tool install --global dotnet-ef
-          export PATH="$PATH:$HOME/.dotnet/tools"
-          dotnet ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web
+
+      - name: Install dotnet-ef
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Apply migrations
+        run: $HOME/.dotnet/tools/dotnet-ef database update --project WeddingManager.Infrastructure --startup-project WeddingManager.Web
 
   deploy-to-vps:
     needs: [build-and-push, migrate-db]
