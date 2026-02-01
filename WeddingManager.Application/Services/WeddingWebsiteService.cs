@@ -33,6 +33,13 @@ public class WeddingWebsiteService(
             return Result<WeddingWebsiteDto>.Fail(new Error(ErrorCodes.NotFound, "Wedding not found"));
         }
 
+        // Check if wedding has a valid date set
+        if (wedding.Date == default || wedding.Date == DateTime.MinValue)
+        {
+            return Result<WeddingWebsiteDto>.Fail(new Error(ErrorCodes.Validation,
+                "Please set a wedding date before creating your website"));
+        }
+
         // Check subscription tier - only Starter and Pro can create websites
         var user = wedding.User;
         if (user.SubscriptionTier == SubscriptionTier.Free)

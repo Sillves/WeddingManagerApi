@@ -185,6 +185,86 @@ public class SmtpEmailService(
         };
     }
 
+    public async Task SendPasswordResetAsync(string email, string resetLink, string language = "en")
+    {
+        if (!_smtpSettings.IsConfigured())
+        {
+            throw new InvalidOperationException("Email settings are not configured");
+        }
+
+        var normalizedLanguage = NormalizeLanguage(language);
+        using var message = new MailMessage(_smtpSettings.FromAddress, email);
+        message.Subject = GetPasswordResetSubject(normalizedLanguage);
+        message.Body = BuildPasswordResetBody(resetLink, normalizedLanguage);
+        message.IsBodyHtml = true;
+
+        using var client = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port);
+        client.EnableSsl = _smtpSettings.UseSsl;
+
+        if (!string.IsNullOrWhiteSpace(_smtpSettings.Username))
+        {
+            client.Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password);
+        }
+
+        await client.SendMailAsync(message);
+    }
+
+    private static string GetPasswordResetSubject(string language)
+    {
+        return language.ToLowerInvariant() switch
+        {
+            "nl" => "Wachtwoord resetten - Amare Wedding",
+            "fr" => "Réinitialisation du mot de passe - Amare Wedding",
+            _ => "Reset your password - Amare Wedding"
+        };
+    }
+
+    private static string BuildPasswordResetBody(string resetLink, string language)
+    {
+        var (greeting, instructions, buttonText, footer, expiry) = language.ToLowerInvariant() switch
+        {
+            "nl" => (
+                "Hallo,",
+                "Je hebt een aanvraag ingediend om je wachtwoord te resetten. Klik op de knop hieronder om een nieuw wachtwoord in te stellen.",
+                "Wachtwoord resetten",
+                "Als je deze aanvraag niet hebt gedaan, kun je deze e-mail veilig negeren.",
+                "Deze link is 24 uur geldig."
+            ),
+            "fr" => (
+                "Bonjour,",
+                "Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe.",
+                "Réinitialiser le mot de passe",
+                "Si vous n'avez pas fait cette demande, vous pouvez ignorer cet e-mail en toute sécurité.",
+                "Ce lien est valable 24 heures."
+            ),
+            _ => (
+                "Hello,",
+                "You requested to reset your password. Click the button below to set a new password.",
+                "Reset Password",
+                "If you didn't request this, you can safely ignore this email.",
+                "This link is valid for 24 hours."
+            )
+        };
+
+        var builder = new StringBuilder();
+        builder.Append("<html><body style=\"font-family: Arial, sans-serif; color: #111; max-width: 600px; margin: 0 auto;\">");
+        builder.Append($"<p>{WebUtility.HtmlEncode(greeting)}</p>");
+        builder.Append($"<p>{WebUtility.HtmlEncode(instructions)}</p>");
+        builder.Append("<p style=\"margin: 24px 0;\">");
+        builder.Append($"<a href=\"{WebUtility.HtmlEncode(resetLink)}\" style=\"display:inline-block;padding:12px 24px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;\">");
+        builder.Append($"{WebUtility.HtmlEncode(buttonText)}</a>");
+        builder.Append("</p>");
+        builder.Append($"<p style=\"font-size:14px;color:#666;\">{WebUtility.HtmlEncode(expiry)}</p>");
+        builder.Append($"<p style=\"font-size:12px;color:#999;\">{WebUtility.HtmlEncode(footer)}</p>");
+        builder.Append("<p style=\"font-size:12px;color:#666; margin-top: 24px;\">");
+        builder.Append($"<a href=\"{WebUtility.HtmlEncode(resetLink)}\" style=\"color:#1d4ed8;word-break:break-all;\">");
+        builder.Append($"{WebUtility.HtmlEncode(resetLink)}</a>");
+        builder.Append("</p>");
+        builder.Append("</body></html>");
+
+        return builder.ToString();
+    }
+
     private static string NormalizeLanguage(string? language)
     {
         return string.IsNullOrWhiteSpace(language) ? "en" : language.Trim().ToLowerInvariant();

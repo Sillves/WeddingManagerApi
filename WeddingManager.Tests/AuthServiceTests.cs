@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.Entities;
+using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
 using WeddingManager.Domain.Utils;
 
@@ -106,16 +107,22 @@ public class AuthServiceTests
 
     private static AuthService CreateService(Mock<UserManager<User>> userManagerMock)
     {
-        var settings = new JwtSettings
+        var jwtSettings = new JwtSettings
         {
             Key = "test_key_that_is_long_enough_for_hs256!",
             Issuer = "test-issuer",
             Audience = "test-audience",
             ExpireDays = 7
         };
-        var options = Options.Create(settings);
+        var frontendSettings = new FrontendSettings
+        {
+            BaseUrl = "https://test.example.com"
+        };
+        var jwtOptions = Options.Create(jwtSettings);
+        var frontendOptions = Options.Create(frontendSettings);
+        var emailService = new Mock<IEmailService>();
         var logger = new Mock<ILogger<AuthService>>();
-        return new AuthService(userManagerMock.Object, options, logger.Object);
+        return new AuthService(userManagerMock.Object, jwtOptions, frontendOptions, emailService.Object, logger.Object);
     }
 
     private static void AssertTokenContains(string token, User user)
