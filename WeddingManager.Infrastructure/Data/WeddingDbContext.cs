@@ -17,6 +17,7 @@ public class WeddingDbContext(DbContextOptions<WeddingDbContext> options)
     public DbSet<Media> Media => Set<Media>();
     public DbSet<SubscriptionUsage> SubscriptionUsages => Set<SubscriptionUsage>();
     public DbSet<WeddingExpense> WeddingExpenses => Set<WeddingExpense>();
+    public DbSet<WeddingWebsite> WeddingWebsites => Set<WeddingWebsite>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

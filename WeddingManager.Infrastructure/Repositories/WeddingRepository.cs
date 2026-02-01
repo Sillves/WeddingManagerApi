@@ -36,6 +36,14 @@ public class WeddingRepository(WeddingDbContext context) : IWeddingRepository
         return await query.FirstOrDefaultAsync(w => w.Slug == idOrSlug);
     }
 
+    public async Task<IEnumerable<Wedding>> GetWeddingsWithMediaOlderThanAsync(DateTime cutoffDate)
+    {
+        return await context.Weddings
+            .Include(w => w.Media)
+            .Where(w => w.Date < cutoffDate && w.Media.Any())
+            .ToListAsync();
+    }
+
     public async Task AddAsync(Wedding wedding)
     {
         await context.Weddings.AddAsync(wedding);

@@ -22,6 +22,17 @@ public static class RateLimitingExtensions
                     QueueLimit = 0
                 });
             });
+            options.AddPolicy("PublicApi", context =>
+            {
+                var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 100,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+            });
             options.AddPolicy("InvitationSend", context =>
             {
                 var userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";

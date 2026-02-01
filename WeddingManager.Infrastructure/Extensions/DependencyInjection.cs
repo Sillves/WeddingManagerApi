@@ -60,6 +60,24 @@ public static class DependencyInjection
         services.AddScoped<IWeddingUserRepository, WeddingUserRepository>();
         services.AddScoped<ISubscriptionUsageRepository, SubscriptionUsageRepository>();
         services.AddScoped<IWeddingExpenseRepository, WeddingExpenseRepository>();
+        services.AddScoped<IWeddingWebsiteRepository, WeddingWebsiteRepository>();
+        services.AddScoped<IMediaRepository, MediaRepository>();
+        services.AddScoped<IMediaService, MediaService>();
+
+        // Use local file storage if Scaleway is not configured, otherwise use Scaleway
+        var scalewaySettings = configuration.GetSection("ScalewayStorage").Get<ScalewayStorageSettings>();
+        if (string.IsNullOrEmpty(scalewaySettings?.AccessKey))
+        {
+            services.AddScoped<IObjectStorageService, LocalFileStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IObjectStorageService, ScalewayObjectStorageService>();
+        }
+
+        // Register background service for media cleanup (runs daily, deletes media 2 weeks after wedding)
+        services.AddHostedService<MediaCleanupService>();
+
         return services;
     }
 }

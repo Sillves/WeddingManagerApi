@@ -17,4 +17,5 @@ public class Wedding
     public ICollection<Media> Media { get; set; } = null!;
     public ICollection<Event> Events { get; set; } = null!;
     public ICollection<WeddingExpense> Expenses { get; set; } = null!;
+    public WeddingWebsite? Website { get; set; }
 }

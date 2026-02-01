@@ -18,6 +18,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
 
+    <PackageReference Include="AWSSDK.S3" Version="3.7.410.2" />
+
     <ProjectReference Include="..\WeddingManager.Application\WeddingManager.Application.csproj" />
     <ProjectReference Include="..\WeddingManager.Domain\WeddingManager.Domain.csproj" />
   </ItemGroup>

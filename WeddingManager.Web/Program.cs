@@ -1,3 +1,4 @@
+using Microsoft.Extensions.FileProviders;
 using WeddingManager.Application.Extensions;
 using WeddingManager.Infrastructure.Extensions;
 using WeddingManager.Web.Endpoints;
@@ -15,6 +16,7 @@ builder.Services.AddStripeSettings(configuration, isDevelopment);
 builder.Services.AddCorsPolicy(configuration, isDevelopment);
 builder.Services.AddFrontendSettings(configuration, isDevelopment);
 builder.Services.AddSubscriptionPlans(configuration);
+builder.Services.AddScalewayStorageSettings(configuration, isDevelopment);
 
 // Add services to the container.
 builder.Services.AddApplication();
@@ -35,10 +37,26 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.UseCors("AllowFrontend");
 }
 
+// CORS must be before static files to apply to all requests
+app.UseCors("AllowFrontend");
+
 app.UseHttpsRedirection();
+
+// Serve static files for local media storage (development)
+app.UseStaticFiles();
+
+// Serve uploaded files from the uploads directory
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
+if (Directory.Exists(uploadsPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadsPath),
+        RequestPath = "/uploads"
+    });
+}
 
 app.UsePublicRateLimiting();
 

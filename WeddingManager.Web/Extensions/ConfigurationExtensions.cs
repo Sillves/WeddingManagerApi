@@ -229,5 +229,46 @@ public static class ConfigurationExtensions
             services.Configure<SubscriptionPlanOptions>(configuration.GetSection("SubscriptionPlans"));
             return services;
         }
+
+        public IServiceCollection AddScalewayStorageSettings(IConfiguration configuration, bool isDevelopment)
+        {
+            if (isDevelopment)
+            {
+                services.Configure<ScalewayStorageSettings>(configuration.GetSection("ScalewayStorage"));
+            }
+            else
+            {
+                var json = configuration["ScalewayStorage"];
+                if (!string.IsNullOrWhiteSpace(json))
+                {
+                    var storageSettings = JsonSerializer.Deserialize<ScalewayStorageSettings>(
+                        json,
+                        JsonOptions
+                    ) ?? throw new InvalidOperationException("Invalid Scaleway storage settings JSON");
+
+                    services.Configure<ScalewayStorageSettings>(options =>
+                    {
+                        options.AccessKey = storageSettings.AccessKey;
+                        options.SecretKey = storageSettings.SecretKey;
+                        options.BucketName = storageSettings.BucketName;
+                        options.Endpoint = storageSettings.Endpoint;
+                        options.Region = storageSettings.Region;
+                    });
+                }
+                else
+                {
+                    services.Configure<ScalewayStorageSettings>(options =>
+                    {
+                        options.AccessKey = configuration["ScalewayStorage__AccessKey"] ?? string.Empty;
+                        options.SecretKey = configuration["ScalewayStorage__SecretKey"] ?? string.Empty;
+                        options.BucketName = configuration["ScalewayStorage__BucketName"] ?? string.Empty;
+                        options.Endpoint = configuration["ScalewayStorage__Endpoint"] ?? "https://s3.fr-par.scw.cloud";
+                        options.Region = configuration["ScalewayStorage__Region"] ?? "fr-par";
+                    });
+                }
+            }
+
+            return services;
+        }
     }
 }

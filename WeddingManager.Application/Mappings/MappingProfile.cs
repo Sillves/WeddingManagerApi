@@ -33,5 +33,15 @@ public class MappingProfile : Profile
         CreateMap<WeddingExpense, WeddingExpenseDto>();
         CreateMap<CreateWeddingExpenseRequestDto, WeddingExpense>();
         CreateMap<UpdateWeddingExpenseRequestDto, WeddingExpense>();
+
+        // Website mappings
+        CreateMap<WeddingWebsite, WeddingWebsiteDto>()
+            .ForMember(dest => dest.WeddingSlug, opt => opt.MapFrom(src => src.Wedding.Slug))
+            .ForMember(dest => dest.Settings, opt => opt.MapFrom(src => System.Text.Json.JsonDocument.Parse(src.Settings)))
+            .ForMember(dest => dest.Content, opt => opt.MapFrom(src => System.Text.Json.JsonDocument.Parse(src.Content)));
+
+        // Media mappings
+        CreateMap<Media, MediaUploadResponseDto>()
+            .ForMember(dest => dest.Url, opt => opt.MapFrom(src => src.S3Url));
     }
 }
