@@ -176,24 +176,29 @@ public static class ConfigurationExtensions
 
         public IServiceCollection AddCorsPolicy(IConfiguration configuration, bool isDevelopment)
         {
-            // Only add CORS in development or if explicitly configured
             var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 
-            if (isDevelopment || allowedOrigins is { Length: > 0 })
+            // Always register CORS services to prevent startup crash
+            services.AddCors(options =>
             {
-                services.AddCors(options =>
+                options.AddPolicy("AllowFrontend", policy =>
                 {
-                    options.AddPolicy("AllowFrontend", policy =>
-                    {
-                        var origins = allowedOrigins ?? ["http://localhost:5173"];
+                    // Use configured origins, or default to localhost in development
+                    var origins = allowedOrigins is { Length: > 0 }
+                        ? allowedOrigins
+                        : isDevelopment
+                            ? ["http://localhost:5173"]
+                            : Array.Empty<string>();
 
+                    if (origins.Length > 0)
+                    {
                         policy.WithOrigins(origins)
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials();
-                    });
+                    }
                 });
-            }
+            });
 
             return services;
         }
