@@ -1,5 +1,4 @@
-
-using AutoMapper;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
@@ -9,7 +8,7 @@ namespace WeddingManager.Application.Services;
 
 public class WeddingUserService(
     IWeddingUserRepository weddingUserRepository,
-    IMapper mapper)
+    ApplicationMapper mapper)
     : IWeddingUserService
 {
     public async Task<Result<WeddingUserDto>> AddUserToWeddingAsync(Guid weddingId, AddWeddingUserRequestDto requestDto)
@@ -30,13 +29,13 @@ public class WeddingUserService(
         };
 
         await weddingUserRepository.AddAsync(weddingUser);
-        return Result<WeddingUserDto>.Ok(mapper.Map<WeddingUserDto>(weddingUser));
+        return Result<WeddingUserDto>.Ok(mapper.WeddingUserToDto(weddingUser));
     }
 
     public async Task<Result<IEnumerable<WeddingUserDto>>> GetWeddingUsersAsync(Guid weddingId)
     {
         var users = await weddingUserRepository.GetByWeddingIdAsync(weddingId);
-        return Result<IEnumerable<WeddingUserDto>>.Ok(mapper.Map<IEnumerable<WeddingUserDto>>(users));
+        return Result<IEnumerable<WeddingUserDto>>.Ok(mapper.WeddingUsersToDto(users));
     }
 
     public async Task<Result> RemoveUserFromWeddingAsync(Guid weddingId, Guid userId)

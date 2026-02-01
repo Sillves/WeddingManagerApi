@@ -1,5 +1,5 @@
 using System.Text.Json;
-using AutoMapper;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
@@ -12,7 +12,7 @@ public class WeddingWebsiteService(
     IWeddingWebsiteRepository websiteRepository,
     IWeddingRepository weddingRepository,
     IEventRepository eventRepository,
-    IMapper mapper) : IWeddingWebsiteService
+    ApplicationMapper mapper) : IWeddingWebsiteService
 {
     public async Task<Result<WeddingWebsiteDto>> GetByWeddingIdAsync(Guid weddingId)
     {
@@ -22,7 +22,7 @@ public class WeddingWebsiteService(
             return Result<WeddingWebsiteDto>.Fail(new Error(ErrorCodes.NotFound, "Website not found for this wedding"));
         }
 
-        return Result<WeddingWebsiteDto>.Ok(mapper.Map<WeddingWebsiteDto>(website));
+        return Result<WeddingWebsiteDto>.Ok(mapper.WebsiteToDto(website));
     }
 
     public async Task<Result<WeddingWebsiteDto>> CreateAsync(Guid userId, Guid weddingId, CreateWeddingWebsiteRequestDto request)
@@ -69,7 +69,7 @@ public class WeddingWebsiteService(
 
         // Reload to get the wedding relationship for mapping
         var createdWebsite = await websiteRepository.GetByWeddingIdAsync(weddingId);
-        return Result<WeddingWebsiteDto>.Ok(mapper.Map<WeddingWebsiteDto>(createdWebsite!));
+        return Result<WeddingWebsiteDto>.Ok(mapper.WebsiteToDto(createdWebsite!));
     }
 
     public async Task<Result<WeddingWebsiteDto>> UpdateAsync(Guid weddingId, UpdateWeddingWebsiteRequestDto request)
@@ -103,7 +103,7 @@ public class WeddingWebsiteService(
         await websiteRepository.UpdateAsync(website);
 
         var updatedWebsite = await websiteRepository.GetByWeddingIdAsync(weddingId);
-        return Result<WeddingWebsiteDto>.Ok(mapper.Map<WeddingWebsiteDto>(updatedWebsite!));
+        return Result<WeddingWebsiteDto>.Ok(mapper.WebsiteToDto(updatedWebsite!));
     }
 
     public async Task<Result<WeddingWebsiteDto>> PublishAsync(Guid weddingId)
@@ -120,7 +120,7 @@ public class WeddingWebsiteService(
         await websiteRepository.UpdateAsync(website);
 
         var updatedWebsite = await websiteRepository.GetByWeddingIdAsync(weddingId);
-        return Result<WeddingWebsiteDto>.Ok(mapper.Map<WeddingWebsiteDto>(updatedWebsite!));
+        return Result<WeddingWebsiteDto>.Ok(mapper.WebsiteToDto(updatedWebsite!));
     }
 
     public async Task<Result<WeddingWebsiteDto>> UnpublishAsync(Guid weddingId)
@@ -136,7 +136,7 @@ public class WeddingWebsiteService(
         await websiteRepository.UpdateAsync(website);
 
         var updatedWebsite = await websiteRepository.GetByWeddingIdAsync(weddingId);
-        return Result<WeddingWebsiteDto>.Ok(mapper.Map<WeddingWebsiteDto>(updatedWebsite!));
+        return Result<WeddingWebsiteDto>.Ok(mapper.WebsiteToDto(updatedWebsite!));
     }
 
     public async Task<Result<PublicWeddingWebsiteDto>> GetPublicBySlugAsync(string slug)
@@ -167,7 +167,7 @@ public class WeddingWebsiteService(
             showEvents.GetBoolean())
         {
             var events = await eventRepository.GetByWeddingIdAsync(website.WeddingId);
-            dto.Events = events.Select(e => mapper.Map<EventDto>(e)).ToList();
+            dto.Events = events.Select(e => mapper.EventToDto(e)).ToList();
         }
 
         return Result<PublicWeddingWebsiteDto>.Ok(dto);

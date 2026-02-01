@@ -1,7 +1,4 @@
-using AutoMapper;
-using Microsoft.Extensions.DependencyInjection;
-using WeddingManager.Application.Extensions;
-using WeddingManager.Domain.DTO;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
 
@@ -9,14 +6,11 @@ namespace WeddingManager.Tests;
 
 public class MappingProfileTests
 {
+    private readonly ApplicationMapper _mapper = new();
+
     [Fact]
     public void EventToEventDto_MapsGuests()
     {
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddApplication();
-        var provider = services.BuildServiceProvider();
-        var mapper = provider.GetRequiredService<IMapper>();
         var weddingId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
         var guests = new List<Guest>
@@ -52,7 +46,7 @@ public class MappingProfileTests
             Guests = guests
         };
 
-        var result = mapper.Map<EventDto>(source);
+        var result = _mapper.EventToDto(source);
 
         Assert.NotNull(result.GuestDtos);
         Assert.Equal(2, result.GuestDtos.Count);

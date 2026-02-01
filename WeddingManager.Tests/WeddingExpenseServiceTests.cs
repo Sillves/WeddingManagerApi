@@ -1,5 +1,5 @@
-using AutoMapper;
 using Moq;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
@@ -11,6 +11,8 @@ namespace WeddingManager.Tests;
 
 public class WeddingExpenseServiceTests
 {
+    private readonly ApplicationMapper _mapper = new();
+
     [Fact]
     public async Task CreateExpenseAsync_ValidatesInputAndAddsExpense()
     {
@@ -25,25 +27,10 @@ public class WeddingExpenseServiceTests
         weddingRepositoryMock.Setup(r => r.GetByIdAsync(weddingId))
             .ReturnsAsync(wedding);
 
-        var mapperMock = new Mock<IMapper>();
-        mapperMock.Setup(m => m.Map<WeddingExpenseDto>(It.IsAny<WeddingExpense>()))
-            .Returns<WeddingExpense>(e => new WeddingExpenseDto
-            {
-                Id = e.Id,
-                WeddingId = e.WeddingId,
-                Amount = e.Amount,
-                Category = e.Category,
-                Description = e.Description,
-                Date = e.Date,
-                Notes = e.Notes,
-                CreatedAt = e.CreatedAt,
-                UpdatedAt = e.UpdatedAt
-            });
-
         var service = new WeddingExpenseService(
             expenseRepositoryMock.Object,
             weddingRepositoryMock.Object,
-            mapperMock.Object,
+            _mapper,
             Mock.Of<Microsoft.Extensions.Logging.ILogger<WeddingExpenseService>>());
 
         var request = new CreateWeddingExpenseRequestDto
@@ -73,12 +60,11 @@ public class WeddingExpenseServiceTests
         var weddingId = Guid.NewGuid();
         var expenseRepositoryMock = new Mock<IWeddingExpenseRepository>();
         var weddingRepositoryMock = new Mock<IWeddingRepository>();
-        var mapperMock = new Mock<IMapper>();
 
         var service = new WeddingExpenseService(
             expenseRepositoryMock.Object,
             weddingRepositoryMock.Object,
-            mapperMock.Object,
+            _mapper,
             Mock.Of<Microsoft.Extensions.Logging.ILogger<WeddingExpenseService>>());
 
         var request = new CreateWeddingExpenseRequestDto
@@ -120,25 +106,11 @@ public class WeddingExpenseServiceTests
             .Returns(Task.CompletedTask);
 
         var weddingRepositoryMock = new Mock<IWeddingRepository>();
-        var mapperMock = new Mock<IMapper>();
-        mapperMock.Setup(m => m.Map<WeddingExpenseDto>(It.IsAny<WeddingExpense>()))
-            .Returns<WeddingExpense>(e => new WeddingExpenseDto
-            {
-                Id = e.Id,
-                WeddingId = e.WeddingId,
-                Amount = e.Amount,
-                Category = e.Category,
-                Description = e.Description,
-                Date = e.Date,
-                Notes = e.Notes,
-                CreatedAt = e.CreatedAt,
-                UpdatedAt = e.UpdatedAt
-            });
 
         var service = new WeddingExpenseService(
             expenseRepositoryMock.Object,
             weddingRepositoryMock.Object,
-            mapperMock.Object,
+            _mapper,
             Mock.Of<Microsoft.Extensions.Logging.ILogger<WeddingExpenseService>>());
 
         var request = new UpdateWeddingExpenseRequestDto
@@ -184,12 +156,11 @@ public class WeddingExpenseServiceTests
             .Returns(Task.CompletedTask);
 
         var weddingRepositoryMock = new Mock<IWeddingRepository>();
-        var mapperMock = new Mock<IMapper>();
 
         var service = new WeddingExpenseService(
             expenseRepositoryMock.Object,
             weddingRepositoryMock.Object,
-            mapperMock.Object,
+            _mapper,
             Mock.Of<Microsoft.Extensions.Logging.ILogger<WeddingExpenseService>>());
 
         var result = await service.DeleteExpenseAsync(expenseId);
@@ -243,24 +214,11 @@ public class WeddingExpenseServiceTests
             .ReturnsAsync(8000.00m);
 
         var weddingRepositoryMock = new Mock<IWeddingRepository>();
-        var mapperMock = new Mock<IMapper>();
-        mapperMock.Setup(m => m.Map<List<WeddingExpenseDto>>(It.IsAny<IEnumerable<WeddingExpense>>()))
-            .Returns(expenses.Select(e => new WeddingExpenseDto
-            {
-                Id = e.Id,
-                WeddingId = e.WeddingId,
-                Amount = e.Amount,
-                Category = e.Category,
-                Description = e.Description,
-                Date = e.Date,
-                CreatedAt = e.CreatedAt,
-                UpdatedAt = e.UpdatedAt
-            }).ToList());
 
         var service = new WeddingExpenseService(
             expenseRepositoryMock.Object,
             weddingRepositoryMock.Object,
-            mapperMock.Object,
+            _mapper,
             Mock.Of<Microsoft.Extensions.Logging.ILogger<WeddingExpenseService>>());
 
         var result = await service.GetSummaryAsync(weddingId);

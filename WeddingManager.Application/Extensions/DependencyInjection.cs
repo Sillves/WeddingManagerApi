@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using WeddingManager.Application.Mappings;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.Interfaces;
@@ -19,10 +19,10 @@ public static class DependencyInjection
         services.AddScoped<IBillingService, BillingService>();
         services.AddScoped<IWeddingExpenseService, WeddingExpenseService>();
         services.AddScoped<IWeddingWebsiteService, WeddingWebsiteService>();
-        services.AddAutoMapper(cfg => 
-        {
-            cfg.AddProfile<MappingProfile>();
-        });        
+
+        // Register Mapperly mapper as singleton (it's stateless)
+        services.AddSingleton<ApplicationMapper>();
+
         return services;
     }
 }

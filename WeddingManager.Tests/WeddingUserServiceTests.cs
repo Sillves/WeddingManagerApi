@@ -1,5 +1,5 @@
-using AutoMapper;
 using Moq;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
@@ -11,6 +11,8 @@ namespace WeddingManager.Tests;
 
 public class WeddingUserServiceTests
 {
+    private readonly ApplicationMapper _mapper = new();
+
     [Fact]
     public async Task AddUserToWeddingAsync_ThrowsWhenAlreadyAdded()
     {
@@ -20,8 +22,7 @@ public class WeddingUserServiceTests
         repositoryMock
             .Setup(r => r.GetByIdAsync(weddingId, userId))
             .ReturnsAsync(new WeddingUser { WeddingId = weddingId, UserId = userId });
-        var mapperMock = new Mock<IMapper>();
-        var service = new WeddingUserService(repositoryMock.Object, mapperMock.Object);
+        var service = new WeddingUserService(repositoryMock.Object, _mapper);
         var request = new AddWeddingUserRequestDto { UserId = userId, Role = WeddingUserRole.Owner };
 
         var result = await service.AddUserToWeddingAsync(weddingId, request);
@@ -29,7 +30,6 @@ public class WeddingUserServiceTests
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCodes.Conflict, result.Errors[0].Code);
         repositoryMock.Verify(r => r.AddAsync(It.IsAny<WeddingUser>()), Times.Never);
-        mapperMock.Verify(m => m.Map<WeddingUserDto>(It.IsAny<WeddingUser>()), Times.Never);
     }
 
     [Fact]
@@ -46,17 +46,7 @@ public class WeddingUserServiceTests
             .Setup(r => r.AddAsync(It.IsAny<WeddingUser>()))
             .Callback<WeddingUser>(w => captured = w)
             .Returns(Task.CompletedTask);
-        var mapperMock = new Mock<IMapper>();
-        mapperMock
-            .Setup(m => m.Map<WeddingUserDto>(It.IsAny<WeddingUser>()))
-            .Returns<WeddingUser>(w => new WeddingUserDto
-            {
-                WeddingId = w.WeddingId,
-                UserId = w.UserId,
-                Role = w.Role,
-                AddedAt = w.AddedAt
-            });
-        var service = new WeddingUserService(repositoryMock.Object, mapperMock.Object);
+        var service = new WeddingUserService(repositoryMock.Object, _mapper);
         var request = new AddWeddingUserRequestDto { UserId = userId, Role = WeddingUserRole.Planner };
 
         var result = await service.AddUserToWeddingAsync(weddingId, request);
@@ -80,23 +70,23 @@ public class WeddingUserServiceTests
         var repositoryMock = new Mock<IWeddingUserRepository>();
         var users = new List<WeddingUser>
         {
-            new() { WeddingId = weddingId, UserId = Guid.NewGuid(), Role = WeddingUserRole.Owner }
+            new()
+            {
+                WeddingId = weddingId,
+                UserId = Guid.NewGuid(),
+                Role = WeddingUserRole.Owner,
+                User = new User { FirstName = "Test", LastName = "User", Email = "test@example.com" }
+            }
         };
         repositoryMock.Setup(r => r.GetByWeddingIdAsync(weddingId)).ReturnsAsync(users);
-        var expected = new List<WeddingUserDto>
-        {
-            new() { WeddingId = weddingId, UserId = users[0].UserId, Role = users[0].Role }
-        };
-        var mapperMock = new Mock<IMapper>();
-        mapperMock
-            .Setup(m => m.Map<IEnumerable<WeddingUserDto>>(It.IsAny<IEnumerable<WeddingUser>>()))
-            .Returns(expected);
-        var service = new WeddingUserService(repositoryMock.Object, mapperMock.Object);
+        var service = new WeddingUserService(repositoryMock.Object, _mapper);
 
         var result = await service.GetWeddingUsersAsync(weddingId);
 
         Assert.True(result.IsSuccess);
-        Assert.Same(expected, result.Value);
+        var list = result.Value!.ToList();
+        Assert.Single(list);
+        Assert.Equal(weddingId, list[0].WeddingId);
     }
 
     [Fact]
@@ -108,8 +98,7 @@ public class WeddingUserServiceTests
         repositoryMock
             .Setup(r => r.GetByIdAsync(weddingId, userId))
             .ReturnsAsync((WeddingUser?)null);
-        var mapperMock = new Mock<IMapper>();
-        var service = new WeddingUserService(repositoryMock.Object, mapperMock.Object);
+        var service = new WeddingUserService(repositoryMock.Object, _mapper);
 
         var result = await service.RemoveUserFromWeddingAsync(weddingId, userId);
 
@@ -130,8 +119,7 @@ public class WeddingUserServiceTests
         repositoryMock
             .Setup(r => r.DeleteAsync(weddingId, userId))
             .Returns(Task.CompletedTask);
-        var mapperMock = new Mock<IMapper>();
-        var service = new WeddingUserService(repositoryMock.Object, mapperMock.Object);
+        var service = new WeddingUserService(repositoryMock.Object, _mapper);
 
         var result = await service.RemoveUserFromWeddingAsync(weddingId, userId);
 

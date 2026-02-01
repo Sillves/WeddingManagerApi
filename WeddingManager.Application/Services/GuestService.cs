@@ -1,6 +1,5 @@
-
-using AutoMapper;
 using Microsoft.Extensions.Logging;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
@@ -14,7 +13,7 @@ public class GuestService(
     IWeddingRepository weddingRepository,
     IEmailService emailService,
     ISubscriptionLimitService subscriptionLimitService,
-    IMapper mapper,
+    ApplicationMapper mapper,
     ILogger<GuestService> logger)
     : IGuestService
 {
@@ -26,13 +25,13 @@ public class GuestService(
         var guest = await guestRepository.GetByIdAsync(guestId);
         return guest == null
             ? Result<GuestDto>.Fail(new Error(ErrorCodes.NotFound, $"Guest with id {guestId} not found"))
-            : Result<GuestDto>.Ok(mapper.Map<GuestDto>(guest));
+            : Result<GuestDto>.Ok(mapper.GuestToDto(guest));
     }
 
     public async Task<Result<IEnumerable<GuestDto>>> GetByWeddingIdAsync(Guid weddingId)
     {
         var guests = await guestRepository.GetByWeddingIdAsync(weddingId);
-        return Result<IEnumerable<GuestDto>>.Ok(mapper.Map<IEnumerable<GuestDto>>(guests));
+        return Result<IEnumerable<GuestDto>>.Ok(mapper.GuestsToDto(guests));
     }
 
     public async Task<Result<GuestDto>> CreateGuestAsync(Guid weddingId, CreateGuestRequestDto requestDto)
@@ -68,7 +67,7 @@ public class GuestService(
         };
 
         await guestRepository.AddAsync(guest);
-        return Result<GuestDto>.Ok(mapper.Map<GuestDto>(guest));
+        return Result<GuestDto>.Ok(mapper.GuestToDto(guest));
     }
 
     public async Task<Result<GuestDto>> UpdateGuestAsync(Guid guestId, UpdateGuestRequestDto requestDto)
@@ -102,7 +101,7 @@ public class GuestService(
         guest.PreferredLanguage = NormalizeLanguage(requestDto.PreferredLanguage);
 
         await guestRepository.UpdateAsync(guest);
-        return Result<GuestDto>.Ok(mapper.Map<GuestDto>(guest));
+        return Result<GuestDto>.Ok(mapper.GuestToDto(guest));
     }
 
     public async Task<Result> DeleteGuestAsync(Guid guestId)
@@ -143,7 +142,7 @@ public class GuestService(
         //     await emailService.SendRsvpConfirmationAsync(guest, wedding);
         // }
 
-        return Result<GuestDto>.Ok(mapper.Map<GuestDto>(guest));
+        return Result<GuestDto>.Ok(mapper.GuestToDto(guest));
     }
 
     public async Task<Result> SendInvitationAsync(Guid weddingId, Guid guestId)

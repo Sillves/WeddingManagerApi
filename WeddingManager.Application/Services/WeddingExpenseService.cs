@@ -1,5 +1,5 @@
-using AutoMapper;
 using Microsoft.Extensions.Logging;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
@@ -11,7 +11,7 @@ namespace WeddingManager.Application.Services;
 public class WeddingExpenseService(
     IWeddingExpenseRepository expenseRepository,
     IWeddingRepository weddingRepository,
-    IMapper mapper,
+    ApplicationMapper mapper,
     ILogger<WeddingExpenseService> logger)
     : IWeddingExpenseService
 {
@@ -20,19 +20,19 @@ public class WeddingExpenseService(
         var expense = await expenseRepository.GetByIdAsync(expenseId);
         return expense == null
             ? Result<WeddingExpenseDto>.Fail(new Error(ErrorCodes.NotFound, $"Expense with id {expenseId} not found"))
-            : Result<WeddingExpenseDto>.Ok(mapper.Map<WeddingExpenseDto>(expense));
+            : Result<WeddingExpenseDto>.Ok(mapper.ExpenseToDto(expense));
     }
 
     public async Task<Result<IEnumerable<WeddingExpenseDto>>> GetByWeddingIdAsync(Guid weddingId)
     {
         var expenses = await expenseRepository.GetByWeddingIdAsync(weddingId);
-        return Result<IEnumerable<WeddingExpenseDto>>.Ok(mapper.Map<IEnumerable<WeddingExpenseDto>>(expenses));
+        return Result<IEnumerable<WeddingExpenseDto>>.Ok(mapper.ExpensesToDto(expenses));
     }
 
     public async Task<Result<IEnumerable<WeddingExpenseDto>>> GetByWeddingIdAndCategoryAsync(Guid weddingId, ExpenseCategory category)
     {
         var expenses = await expenseRepository.GetByWeddingIdAndCategoryAsync(weddingId, category);
-        return Result<IEnumerable<WeddingExpenseDto>>.Ok(mapper.Map<IEnumerable<WeddingExpenseDto>>(expenses));
+        return Result<IEnumerable<WeddingExpenseDto>>.Ok(mapper.ExpensesToDto(expenses));
     }
 
     public async Task<Result<WeddingExpenseSummaryDto>> GetSummaryAsync(Guid weddingId)
@@ -45,7 +45,7 @@ public class WeddingExpenseService(
         {
             TotalAmount = totalAmount,
             CategoryTotals = categoryTotals,
-            Expenses = mapper.Map<List<WeddingExpenseDto>>(expenses)
+            Expenses = mapper.ExpensesToListDto(expenses)
         };
 
         return Result<WeddingExpenseSummaryDto>.Ok(summary);
@@ -81,7 +81,7 @@ public class WeddingExpenseService(
         await expenseRepository.AddAsync(expense);
         logger.LogInformation("Created expense {ExpenseId} for wedding {WeddingId}", expense.Id, weddingId);
 
-        return Result<WeddingExpenseDto>.Ok(mapper.Map<WeddingExpenseDto>(expense));
+        return Result<WeddingExpenseDto>.Ok(mapper.ExpenseToDto(expense));
     }
 
     public async Task<Result<WeddingExpenseDto>> UpdateExpenseAsync(Guid expenseId, UpdateWeddingExpenseRequestDto requestDto)
@@ -108,7 +108,7 @@ public class WeddingExpenseService(
         await expenseRepository.UpdateAsync(expense);
         logger.LogInformation("Updated expense {ExpenseId}", expenseId);
 
-        return Result<WeddingExpenseDto>.Ok(mapper.Map<WeddingExpenseDto>(expense));
+        return Result<WeddingExpenseDto>.Ok(mapper.ExpenseToDto(expense));
     }
 
     public async Task<Result> DeleteExpenseAsync(Guid expenseId)

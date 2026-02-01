@@ -1,4 +1,4 @@
-using AutoMapper;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Interfaces;
@@ -11,9 +11,9 @@ public class CreateWedding : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/weddings", async (CreateWeddingRequestDto requestDto, IWeddingService weddingService, IMapper mapper) =>
+        app.MapPost("/weddings", async (CreateWeddingRequestDto requestDto, IWeddingService weddingService, ApplicationMapper mapper) =>
         {
-            var wedding = mapper.Map<Wedding>(requestDto);
+            var wedding = mapper.CreateWeddingRequestToWedding(requestDto);
 
             var result = await weddingService.AddAsync(wedding);
             if (!result.IsSuccess)

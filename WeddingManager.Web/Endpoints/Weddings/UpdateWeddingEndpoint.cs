@@ -1,4 +1,4 @@
-using AutoMapper;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Extensions;
@@ -10,7 +10,7 @@ public class UpdateWedding : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPut("/weddings/{id:guid}", async (Guid id, UpdateWeddingRequestDto requestDto, IWeddingService weddingService, IMapper mapper) =>
+        app.MapPut("/weddings/{id:guid}", async (Guid id, UpdateWeddingRequestDto requestDto, IWeddingService weddingService, ApplicationMapper mapper) =>
         {
             // Get existing wedding
             var existingResult = await weddingService.GetByIdAsync(id);
@@ -43,7 +43,7 @@ public class UpdateWedding : IEndpoint
                 return result.ToErrorResult();
             }
 
-            return Results.Ok(mapper.Map<WeddingDto>(wedding));
+            return Results.Ok(mapper.WeddingToDto(wedding));
         })
         .WithTags("Weddings")
         .WithName("UpdateWedding")

@@ -1,4 +1,4 @@
-using AutoMapper;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
@@ -10,7 +10,7 @@ namespace WeddingManager.Application.Services;
 public class EventService(
     IEventRepository eventRepository,
     ISubscriptionLimitService subscriptionLimitService,
-    IMapper mapper) : IEventService
+    ApplicationMapper mapper) : IEventService
 {
     public async Task<Result<EventDto>> CreateEventAsync(Guid weddingId, CreateEventRequestDto requestDto)
     {
@@ -26,12 +26,12 @@ public class EventService(
             return Result<EventDto>.Fail(limitResult.Errors);
         }
 
-        var @event = mapper.Map<Event>(requestDto);
+        var @event = mapper.CreateEventRequestToEvent(requestDto);
         @event.Id = Guid.NewGuid();
         @event.WeddingId = weddingId;
 
         await eventRepository.AddAsync(@event);
-        return Result<EventDto>.Ok(mapper.Map<EventDto>(@event));
+        return Result<EventDto>.Ok(mapper.EventToDto(@event));
     }
 
     public async Task<Result<EventDto>> GetByIdAsync(Guid eventId)
@@ -39,19 +39,19 @@ public class EventService(
         var @event = await eventRepository.GetByIdAsync(eventId);
         return @event == null
             ? Result<EventDto>.Fail(new Error(ErrorCodes.NotFound, $"Event with id {eventId} not found"))
-            : Result<EventDto>.Ok(mapper.Map<EventDto>(@event));
+            : Result<EventDto>.Ok(mapper.EventToDto(@event));
     }
 
     public async Task<Result<IEnumerable<EventDto>>> GetAllAsync()
     {
         var events = await eventRepository.GetAllAsync();
-        return Result<IEnumerable<EventDto>>.Ok(mapper.Map<IEnumerable<EventDto>>(events));
+        return Result<IEnumerable<EventDto>>.Ok(mapper.EventsToDto(events));
     }
 
     public async Task<Result<IEnumerable<EventDto>>> GetByWeddingIdAsync(Guid weddingId)
     {
         var events = await eventRepository.GetByWeddingIdAsync(weddingId);
-        return Result<IEnumerable<EventDto>>.Ok(mapper.Map<IEnumerable<EventDto>>(events));
+        return Result<IEnumerable<EventDto>>.Ok(mapper.EventsToDto(events));
     }
 
     public async Task<Result<EventDto>> GetByNameAsync(string name)
@@ -59,7 +59,7 @@ public class EventService(
         var @event = await eventRepository.GetByNameAsync(name);
         return @event == null
             ? Result<EventDto>.Fail(new Error(ErrorCodes.NotFound, $"Event with name {name} not found"))
-            : Result<EventDto>.Ok(mapper.Map<EventDto>(@event));
+            : Result<EventDto>.Ok(mapper.EventToDto(@event));
     }
 
     public async Task<Result<EventDto>> UpdateEventAsync(Guid eventId, UpdateEventRequestDto requestDto)
@@ -76,9 +76,9 @@ public class EventService(
             return Result<EventDto>.Fail(new Error(ErrorCodes.NotFound, $"Event with id {eventId} not found"));
         }
 
-        mapper.Map(requestDto, @event);
+        mapper.UpdateEventFromDto(requestDto, @event);
         await eventRepository.UpdateAsync(@event);
-        return Result<EventDto>.Ok(mapper.Map<EventDto>(@event));
+        return Result<EventDto>.Ok(mapper.EventToDto(@event));
     }
 
     public async Task<Result> DeleteEventAsync(Guid eventId)

@@ -1,5 +1,5 @@
-using AutoMapper;
 using Moq;
+using WeddingManager.Application.Mappings;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
@@ -11,17 +11,18 @@ namespace WeddingManager.Tests;
 
 public class EventServiceTests
 {
+    private readonly ApplicationMapper _mapper = new();
+
     [Fact]
     public async Task CreateEventAsync_SetsWeddingIdAndMapsFields()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         Event? captured = null;
         repositoryMock
             .Setup(r => r.AddAsync(It.IsAny<Event>()))
             .Callback<Event>(e => captured = e)
             .Returns(Task.CompletedTask);
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
         var weddingId = Guid.NewGuid();
         var request = new CreateEventRequestDto
         {
@@ -31,26 +32,6 @@ public class EventServiceTests
             Location = "Ghent",
             Description = "Main ceremony"
         };
-        var mappedEvent = new Event
-        {
-            Name = request.Name,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            Location = request.Location,
-            Description = request.Description
-        };
-        mapperMock.Setup(m => m.Map<Event>(request)).Returns(mappedEvent);
-        mapperMock.Setup(m => m.Map<EventDto>(It.IsAny<Event>()))
-            .Returns<Event>(e => new EventDto
-            {
-                Id = e.Id,
-                WeddingId = e.WeddingId,
-                Name = e.Name,
-                StartDate = e.StartDate,
-                EndDate = e.EndDate,
-                Location = e.Location,
-                Description = e.Description
-            });
 
         var result = await service.CreateEventAsync(weddingId, request);
 
@@ -70,24 +51,12 @@ public class EventServiceTests
     public async Task CreateEventAsync_EnforcesLimit()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         var limitMock = new Mock<ISubscriptionLimitService>();
         limitMock.Setup(l => l.EnsureEventLimitAsync(It.IsAny<Guid>())).ReturnsAsync(Result.Ok());
 
-        var service = CreateService(repositoryMock, mapperMock, limitMock);
+        var service = CreateService(repositoryMock, limitMock);
         var weddingId = Guid.NewGuid();
         var request = CreateValidCreateRequest();
-        var mappedEvent = new Event
-        {
-            Name = request.Name,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            Location = request.Location,
-            Description = request.Description
-        };
-        mapperMock.Setup(m => m.Map<Event>(request)).Returns(mappedEvent);
-        mapperMock.Setup(m => m.Map<EventDto>(It.IsAny<Event>()))
-            .Returns(new EventDto { Id = Guid.NewGuid(), WeddingId = weddingId, Name = request.Name });
 
         var result = await service.CreateEventAsync(weddingId, request);
 
@@ -99,7 +68,6 @@ public class EventServiceTests
     public async Task UpdateEventAsync_UpdatesFields()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         var existing = new Event
         {
             Id = Guid.NewGuid(),
@@ -111,7 +79,7 @@ public class EventServiceTests
         };
         repositoryMock.Setup(r => r.GetByIdAsync(existing.Id)).ReturnsAsync(existing);
         repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<Event>())).Returns(Task.CompletedTask);
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
 
         var update = new UpdateEventRequestDto
         {
@@ -121,27 +89,6 @@ public class EventServiceTests
             Location = "Bruges",
             Description = "Updated details"
         };
-        mapperMock.Setup(m => m.Map(update, existing))
-            .Callback<UpdateEventRequestDto, Event>((src, dest) =>
-            {
-                dest.Name = src.Name;
-                dest.StartDate = src.StartDate;
-                dest.EndDate = src.EndDate;
-                dest.Location = src.Location;
-                dest.Description = src.Description;
-            })
-            .Returns(existing);
-        mapperMock.Setup(m => m.Map<EventDto>(It.IsAny<Event>()))
-            .Returns<Event>(e => new EventDto
-            {
-                Id = e.Id,
-                WeddingId = e.WeddingId,
-                Name = e.Name,
-                StartDate = e.StartDate,
-                EndDate = e.EndDate,
-                Location = e.Location,
-                Description = e.Description
-            });
 
         var result = await service.UpdateEventAsync(existing.Id, update);
 
@@ -165,9 +112,8 @@ public class EventServiceTests
     public async Task UpdateEventAsync_ThrowsWhenMissing()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         repositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Event?)null);
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
 
         var update = new UpdateEventRequestDto
         {
@@ -190,8 +136,7 @@ public class EventServiceTests
     public async Task CreateEventAsync_ThrowsWhenRequiredFieldsMissing(string name, string location, string message)
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
         var request = CreateValidCreateRequest();
         request.Name = name;
         request.Location = location;
@@ -201,15 +146,13 @@ public class EventServiceTests
         Assert.False(result.IsSuccess);
         Assert.Contains(result.Errors, e => e.Message == message);
         repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
-        mapperMock.Verify(m => m.Map<Event>(It.IsAny<CreateEventRequestDto>()), Times.Never);
     }
 
     [Fact]
     public async Task CreateEventAsync_ThrowsWhenStartDateDefault()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
         var request = CreateValidCreateRequest();
         request.StartDate = default;
 
@@ -224,8 +167,7 @@ public class EventServiceTests
     public async Task CreateEventAsync_ThrowsWhenEndDateDefault()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
         var request = CreateValidCreateRequest();
         request.EndDate = default;
 
@@ -240,8 +182,7 @@ public class EventServiceTests
     public async Task CreateEventAsync_ThrowsWhenEndDateBeforeStartDate()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
         var request = CreateValidCreateRequest();
         request.StartDate = new DateTime(2026, 1, 2, 12, 0, 0, DateTimeKind.Utc);
         request.EndDate = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
@@ -257,8 +198,7 @@ public class EventServiceTests
     public async Task UpdateEventAsync_ThrowsWhenEndDateBeforeStartDate()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
         var update = CreateValidUpdateRequest();
         update.StartDate = new DateTime(2026, 1, 2, 12, 0, 0, DateTimeKind.Utc);
         update.EndDate = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
@@ -275,7 +215,6 @@ public class EventServiceTests
     public async Task GetByWeddingIdAsync_ReturnsEventsForWedding()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         var weddingId = Guid.NewGuid();
         var events = new List<Event>
         {
@@ -298,18 +237,7 @@ public class EventServiceTests
         };
         repositoryMock.Setup(r => r.GetByWeddingIdAsync(weddingId))
             .ReturnsAsync(events.Where(e => e.WeddingId == weddingId));
-        mapperMock.Setup(m => m.Map<IEnumerable<EventDto>>(It.IsAny<IEnumerable<Event>>()))
-            .Returns<IEnumerable<Event>>(src => src.Select(e => new EventDto
-            {
-                Id = e.Id,
-                WeddingId = e.WeddingId,
-                Name = e.Name,
-                StartDate = e.StartDate,
-                EndDate = e.EndDate,
-                Location = e.Location,
-                Description = e.Description
-            }).ToList());
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
 
         var result = await service.GetByWeddingIdAsync(weddingId);
 
@@ -323,11 +251,10 @@ public class EventServiceTests
     public async Task AddGuestToEventAsync_DelegatesResult()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         repositoryMock
             .Setup(r => r.AddGuestToEventAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(EventGuestChangeResult.Unauthorized);
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
 
         var result = await service.AddGuestToEventAsync(Guid.NewGuid(), Guid.NewGuid());
 
@@ -339,7 +266,6 @@ public class EventServiceTests
     public async Task AddGuestsToEventAsync_DelegatesResult()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         var expected = new EventGuestBatchChangeResultDto
         {
             Status = EventGuestChangeResult.Added,
@@ -348,7 +274,7 @@ public class EventServiceTests
         repositoryMock
             .Setup(r => r.AddGuestsToEventAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<Guid>>()))
             .ReturnsAsync(expected);
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
 
         var result = await service.AddGuestsToEventAsync(Guid.NewGuid(), [Guid.NewGuid()]);
 
@@ -360,11 +286,10 @@ public class EventServiceTests
     public async Task RemoveGuestFromEventAsync_DelegatesResult()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         repositoryMock
             .Setup(r => r.RemoveGuestFromEventAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
             .ReturnsAsync(EventGuestChangeResult.NotInEvent);
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
 
         var result = await service.RemoveGuestFromEventAsync(Guid.NewGuid(), Guid.NewGuid());
 
@@ -376,7 +301,6 @@ public class EventServiceTests
     public async Task RemoveGuestsFromEventAsync_DelegatesResult()
     {
         var repositoryMock = new Mock<IEventRepository>();
-        var mapperMock = new Mock<IMapper>();
         var expected = new EventGuestBatchRemoveResultDto
         {
             Status = EventGuestChangeResult.Removed,
@@ -385,7 +309,7 @@ public class EventServiceTests
         repositoryMock
             .Setup(r => r.RemoveGuestsFromEventAsync(It.IsAny<Guid>(), It.IsAny<IReadOnlyCollection<Guid>>()))
             .ReturnsAsync(expected);
-        var service = CreateService(repositoryMock, mapperMock);
+        var service = CreateService(repositoryMock);
 
         var result = await service.RemoveGuestsFromEventAsync(Guid.NewGuid(), [Guid.NewGuid()]);
 
@@ -393,16 +317,15 @@ public class EventServiceTests
         Assert.Same(expected, result.Value);
     }
 
-    private static EventService CreateService(
+    private EventService CreateService(
         Mock<IEventRepository> repositoryMock,
-        Mock<IMapper> mapperMock,
         Mock<ISubscriptionLimitService>? limitMock = null)
     {
         limitMock ??= new Mock<ISubscriptionLimitService>();
         limitMock
             .Setup(l => l.EnsureEventLimitAsync(It.IsAny<Guid>()))
             .ReturnsAsync(Result.Ok());
-        return new EventService(repositoryMock.Object, limitMock.Object, mapperMock.Object);
+        return new EventService(repositoryMock.Object, limitMock.Object, _mapper);
     }
 
     private static CreateEventRequestDto CreateValidCreateRequest() => new()
