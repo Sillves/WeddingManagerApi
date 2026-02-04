@@ -18,7 +18,7 @@ public class BillingServiceTests
     {
         var service = CreateService();
 
-        var result = await service.CreateCheckoutSessionAsync(SubscriptionTier.Free, BillingInterval.Monthly);
+        var result = await service.CreateCheckoutSessionAsync(SubscriptionTier.Free, BillingInterval.Lifetime);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCodes.Validation, result.Errors[0].Code);
@@ -29,7 +29,7 @@ public class BillingServiceTests
     {
         var service = CreateService(stripeSettings: CreateStripeSettings());
 
-        var result = await service.CreateCheckoutSessionAsync(SubscriptionTier.Starter, BillingInterval.Monthly);
+        var result = await service.CreateCheckoutSessionAsync(SubscriptionTier.Starter, BillingInterval.Lifetime);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCodes.Validation, result.Errors[0].Code);
@@ -60,39 +60,6 @@ public class BillingServiceTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCodes.Conflict, result.Errors[0].Code);
-    }
-
-    [Fact]
-    public async Task ChangePlanAsync_ReturnsValidationForLifetime()
-    {
-        var service = CreateService();
-
-        var result = await service.ChangePlanAsync(SubscriptionTier.Starter, BillingInterval.Lifetime);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorCodes.Validation, result.Errors[0].Code);
-    }
-
-    [Fact]
-    public async Task ChangePlanAsync_ReturnsValidationForFreeTier()
-    {
-        var service = CreateService();
-
-        var result = await service.ChangePlanAsync(SubscriptionTier.Free, BillingInterval.Monthly);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorCodes.Validation, result.Errors[0].Code);
-    }
-
-    [Fact]
-    public async Task ChangePlanAsync_ReturnsValidationWhenPriceMissing()
-    {
-        var service = CreateService(stripeSettings: CreateStripeSettings());
-
-        var result = await service.ChangePlanAsync(SubscriptionTier.Starter, BillingInterval.Monthly);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorCodes.Validation, result.Errors[0].Code);
     }
 
     [Fact]

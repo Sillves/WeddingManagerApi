@@ -38,7 +38,7 @@ public class BillingService(
             return Result<BillingCheckoutSession>.Fail(new Error(ErrorCodes.Validation, "Free tier does not require checkout."));
         }
 
-        var price = await ResolvePriceAsync(tier, interval);
+        var price = await ResolvePriceAsync(tier);
         if (price == null)
         {
             return Result<BillingCheckoutSession>.Fail(new Error(ErrorCodes.Validation, "Stripe price mapping not found."));
@@ -53,7 +53,7 @@ public class BillingService(
 
         var options = new CheckoutSessionCreateOptions
         {
-            Mode = interval == BillingInterval.Lifetime ? "payment" : "subscription",
+            Mode = "payment", // One-time payment only
             SuccessUrl = _stripeSettings.SuccessUrl,
             CancelUrl = _stripeSettings.CancelUrl,
             AllowPromotionCodes = true,
@@ -69,23 +69,9 @@ public class BillingService(
             Metadata = new Dictionary<string, string>
             {
                 ["userId"] = userId.ToString(),
-                ["tier"] = tier.ToString(),
-                ["interval"] = interval.ToString()
+                ["tier"] = tier.ToString()
             }
         };
-
-        if (interval != BillingInterval.Lifetime)
-        {
-            options.SubscriptionData = new SessionSubscriptionDataOptions
-            {
-                Metadata = new Dictionary<string, string>
-                {
-                    ["userId"] = userId.ToString(),
-                    ["tier"] = tier.ToString(),
-                    ["interval"] = interval.ToString()
-                }
-            };
-        }
 
         if (!string.IsNullOrWhiteSpace(user.StripeCustomerId))
         {
@@ -137,67 +123,6 @@ public class BillingService(
         return Result<BillingPortalSession>.Ok(new BillingPortalSession(session.Id, session.Url));
     }
 
-    public async Task<Result> ChangePlanAsync(SubscriptionTier tier, BillingInterval interval)
-    {
-        if (interval == BillingInterval.Lifetime)
-        {
-            return Result.Fail(new Error(ErrorCodes.Validation, "Lifetime plans must be purchased through checkout."));
-        }
-
-        if (tier == SubscriptionTier.Free)
-        {
-            return Result.Fail(new Error(ErrorCodes.Validation, "Free tier does not require a paid subscription."));
-        }
-
-        var price = await ResolvePriceAsync(tier, interval);
-        if (price == null)
-        {
-            return Result.Fail(new Error(ErrorCodes.Validation, "Stripe price mapping not found."));
-        }
-
-        var userId = userContextService.GetUserId();
-        var user = await userManager.FindByIdAsync(userId.ToString());
-        if (user == null)
-        {
-            return Result.Fail(new Error(ErrorCodes.NotFound, "User not found."));
-        }
-
-        if (string.IsNullOrWhiteSpace(user.StripeSubscriptionId))
-        {
-            return Result.Fail(new Error(ErrorCodes.Conflict, "No active subscription found to update."));
-        }
-
-        var subscriptionService = new SubscriptionService(_stripeClient);
-        var subscription = await subscriptionService.GetAsync(user.StripeSubscriptionId);
-        var item = subscription.Items.Data.FirstOrDefault();
-        if (item == null)
-        {
-            return Result.Fail(new Error(ErrorCodes.ExternalFailure, "Stripe subscription items not found."));
-        }
-
-        var updateOptions = new SubscriptionUpdateOptions
-        {
-            CancelAtPeriodEnd = false,
-            ProrationBehavior = "create_prorations",
-            Metadata = new Dictionary<string, string>
-            {
-                ["tier"] = tier.ToString(),
-                ["interval"] = interval.ToString()
-            },
-            Items =
-            [
-                new SubscriptionItemOptions
-                {
-                    Id = item.Id,
-                    Price = price.Id
-                }
-            ]
-        };
-
-        var updated = await subscriptionService.UpdateAsync(subscription.Id, updateOptions);
-        return await UpdateUserSubscriptionAsync(user, tier, updated.CustomerId, updated.Id);
-    }
-
     public async Task<Result> HandleWebhookAsync(string payload, string signature)
     {
         StripeEvent stripeEvent;
@@ -211,13 +136,10 @@ public class BillingService(
             return Result.Fail(new Error(ErrorCodes.Validation, "Invalid Stripe signature."));
         }
 
+        // Only handle checkout.session.completed for one-time payments
         return stripeEvent.Type switch
         {
             "checkout.session.completed" => await HandleCheckoutSessionCompletedAsync(stripeEvent),
-            "invoice.paid" => await HandleInvoicePaidAsync(stripeEvent),
-            "invoice.payment_failed" => await HandleInvoicePaymentFailedAsync(stripeEvent),
-            "customer.subscription.updated" => await HandleSubscriptionUpdatedAsync(stripeEvent),
-            "customer.subscription.deleted" => await HandleSubscriptionDeletedAsync(stripeEvent),
             _ => Result.Ok()
         };
     }
@@ -236,19 +158,13 @@ public class BillingService(
                 .Where(feature => !limits.Features.Contains(feature, StringComparer.OrdinalIgnoreCase))
                 .ToList();
 
-            foreach (var interval in new[] { BillingInterval.Monthly, BillingInterval.Annual, BillingInterval.Lifetime })
+            // Only fetch one-time (Lifetime) price
+            var price = await ResolvePriceAsync(tier);
+            if (price != null)
             {
-                var price = await ResolvePriceAsync(tier, interval);
-                if (price == null)
-                {
-                    continue;
-                }
-
                 var unitAmount = price.UnitAmount ?? 0;
-                var currency = price.Currency ?? "usd";
-                var isRecurring = price.Recurring != null;
-
-                prices.Add(new BillingPlanPriceDto(price.Id, interval, unitAmount, currency, isRecurring));
+                var currency = price.Currency ?? "eur";
+                prices.Add(new BillingPlanPriceDto(price.Id, BillingInterval.Lifetime, unitAmount, currency, false));
             }
 
             plans.Add(new BillingPlanDto(
@@ -301,117 +217,11 @@ public class BillingService(
         }
 
         var tier = GetTierFromMetadata(session.Metadata);
-        if (tier == null && !string.IsNullOrWhiteSpace(session.SubscriptionId))
-        {
-            tier = await GetTierFromSubscriptionAsync(session.SubscriptionId);
-        }
-
         if (tier != null)
-            return await UpdateUserSubscriptionAsync(user, tier.Value, session.CustomerId, session.SubscriptionId);
-        
+            return await UpdateUserTierAsync(user, tier.Value, session.CustomerId);
+
         logger.LogWarning("Stripe checkout session completed but tier could not be resolved. SessionId: {SessionId}", session.Id);
         return Result.Ok();
-
-    }
-
-    private async Task<Result> HandleInvoicePaidAsync(StripeEvent stripeEvent)
-    {
-        if (stripeEvent.Data.Object is not Invoice invoice)
-        {
-            return Result.Ok();
-        }
-
-        var linePrice = invoice.Lines?.Data.FirstOrDefault()?.Price;
-        var tier = _stripeSettings.GetTierForPriceId(linePrice?.Id, linePrice?.ProductId);
-        if (tier == null && !string.IsNullOrWhiteSpace(invoice.SubscriptionId))
-        {
-            tier = await GetTierFromSubscriptionAsync(invoice.SubscriptionId);
-        }
-
-        if (tier == null)
-        {
-            logger.LogWarning("Stripe invoice paid but tier could not be resolved. InvoiceId: {InvoiceId}", invoice.Id);
-            return Result.Ok();
-        }
-
-        var user = await FindUserAsync(GetMetadataValue(invoice.Metadata, "userId"), invoice.CustomerId);
-        if (user != null)
-            return await UpdateUserSubscriptionAsync(user, tier.Value, invoice.CustomerId, invoice.SubscriptionId);
-        
-        logger.LogWarning("Stripe invoice paid but no user found. CustomerId: {CustomerId}", invoice.CustomerId);
-        return Result.Ok();
-
-    }
-
-    private async Task<Result> HandleInvoicePaymentFailedAsync(StripeEvent stripeEvent)
-    {
-        if (stripeEvent.Data.Object is not Invoice invoice)
-        {
-            return Result.Ok();
-        }
-
-        var user = await FindUserAsync(GetMetadataValue(invoice.Metadata, "userId"), invoice.CustomerId);
-            
-        if (user != null) return await DowngradeToFreeAsync(user, invoice.CustomerId);
-        logger.LogWarning("Stripe invoice payment failed but no user found. CustomerId: {CustomerId}", invoice.CustomerId);
-        
-        return Result.Ok();
-
-    }
-
-    private async Task<Result> HandleSubscriptionUpdatedAsync(StripeEvent stripeEvent)
-    {
-        if (stripeEvent.Data.Object is not Subscription subscription)
-        {
-            return Result.Ok();
-        }
-
-        var user = await FindUserAsync(GetMetadataValue(subscription.Metadata, "userId"), subscription.CustomerId);
-        if (user == null)
-        {
-            logger.LogWarning("Stripe subscription updated but no user found. CustomerId: {CustomerId}", subscription.CustomerId);
-            return Result.Ok();
-        }
-
-        if (subscription.Status is not "active" and not "trialing")
-        {
-            return await DowngradeToFreeAsync(user, subscription.CustomerId);
-        }
-
-        var itemPrice = subscription.Items.Data.FirstOrDefault()?.Price;
-        var tier = GetTierFromMetadata(subscription.Metadata)
-                   ?? _stripeSettings.GetTierForPriceId(itemPrice?.Id, itemPrice?.ProductId);
-
-        if (tier != null)
-            return await UpdateUserSubscriptionAsync(user, tier.Value, subscription.CustomerId, subscription.Id);
-        
-        logger.LogWarning("Stripe subscription updated but tier could not be resolved. SubscriptionId: {SubscriptionId}", subscription.Id);
-        return Result.Ok();
-
-    }
-
-    private async Task<Result> HandleSubscriptionDeletedAsync(StripeEvent stripeEvent)
-    {
-        if (stripeEvent.Data.Object is not Subscription subscription)
-        {
-            return Result.Ok();
-        }
-
-        var user = await FindUserAsync(GetMetadataValue(subscription.Metadata, "userId"), subscription.CustomerId);
-        if (user != null) return await DowngradeToFreeAsync(user, subscription.CustomerId);
-            
-        logger.LogWarning("Stripe subscription deleted but no user found. CustomerId: {CustomerId}", subscription.CustomerId);
-        
-        return Result.Ok();
-
-    }
-
-    private async Task<SubscriptionTier?> GetTierFromSubscriptionAsync(string subscriptionId)
-    {
-        var subscriptionService = new SubscriptionService(_stripeClient);
-        var subscription = await subscriptionService.GetAsync(subscriptionId);
-        var price = subscription.Items.Data.FirstOrDefault()?.Price;
-        return _stripeSettings.GetTierForPriceId(price?.Id, price?.ProductId);
     }
 
     private async Task<User?> FindUserAsync(string? userId, string? customerId)
@@ -433,32 +243,9 @@ public class BillingService(
         return null;
     }
 
-    private async Task<Result> UpdateUserSubscriptionAsync(User user, SubscriptionTier tier, string? customerId, string? subscriptionId)
+    private async Task<Result> UpdateUserTierAsync(User user, SubscriptionTier tier, string? customerId)
     {
         user.SubscriptionTier = tier;
-        if (!string.IsNullOrWhiteSpace(customerId))
-        {
-            user.StripeCustomerId = customerId;
-        }
-
-        if (!string.IsNullOrWhiteSpace(subscriptionId))
-        {
-            user.StripeSubscriptionId = subscriptionId;
-        }
-
-        var updateResult = await userManager.UpdateAsync(user);
-        if (!updateResult.Succeeded)
-        {
-            return Result.Fail(new Error(ErrorCodes.ExternalFailure, "Failed to update subscription details."));
-        }
-
-        return Result.Ok();
-    }
-
-    private async Task<Result> DowngradeToFreeAsync(User user, string? customerId)
-    {
-        user.SubscriptionTier = SubscriptionTier.Free;
-        user.StripeSubscriptionId = null;
         if (!string.IsNullOrWhiteSpace(customerId))
         {
             user.StripeCustomerId = customerId;
@@ -494,9 +281,12 @@ public class BillingService(
         return metadata.TryGetValue(key, out var value) ? value : null;
     }
 
-    private async Task<Price?> ResolvePriceAsync(SubscriptionTier tier, BillingInterval interval)
+    /// <summary>
+    /// Resolves the one-time (lifetime) price for a subscription tier.
+    /// </summary>
+    private async Task<Price?> ResolvePriceAsync(SubscriptionTier tier)
     {
-        var configuredId = _stripeSettings.GetConfiguredId(tier, interval);
+        var configuredId = _stripeSettings.GetConfiguredId(tier, BillingInterval.Lifetime);
         if (string.IsNullOrWhiteSpace(configuredId))
         {
             return null;
@@ -517,6 +307,7 @@ public class BillingService(
             }
         }
 
+        // For product IDs, find the one-time (non-recurring) price
         var listOptions = new PriceListOptions
         {
             Product = configuredId,
@@ -525,12 +316,6 @@ public class BillingService(
         };
 
         var prices = await priceService.ListAsync(listOptions);
-        return interval switch
-        {
-            BillingInterval.Monthly => prices.Data.FirstOrDefault(p => p.Recurring?.Interval == "month"),
-            BillingInterval.Annual => prices.Data.FirstOrDefault(p => p.Recurring?.Interval == "year"),
-            BillingInterval.Lifetime => prices.Data.FirstOrDefault(p => p.Recurring == null),
-            _ => null
-        };
+        return prices.Data.FirstOrDefault(p => p.Recurring == null);
     }
 }

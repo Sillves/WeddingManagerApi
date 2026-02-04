@@ -11,6 +11,10 @@ public class StripeSettings
     public string PortalReturnUrl { get; set; } = string.Empty;
     public Dictionary<string, StripePriceOptions> Prices { get; set; } = new();
 
+    /// <summary>
+    /// Gets the configured Stripe price ID for a subscription tier.
+    /// Only lifetime (one-time) payments are supported.
+    /// </summary>
     public string? GetConfiguredId(SubscriptionTier tier, BillingInterval interval)
     {
         if (tier == SubscriptionTier.Free)
@@ -24,15 +28,13 @@ public class StripeSettings
             return null;
         }
 
-        return interval switch
-        {
-            BillingInterval.Monthly => options.Monthly,
-            BillingInterval.Annual => options.Annual,
-            BillingInterval.Lifetime => options.Lifetime,
-            _ => null
-        };
+        // Only lifetime (one-time) payments are supported
+        return options.Lifetime;
     }
 
+    /// <summary>
+    /// Gets the subscription tier for a Stripe price or product ID.
+    /// </summary>
     public SubscriptionTier? GetTierForPriceId(string? priceId, string? productId = null)
     {
         if (string.IsNullOrWhiteSpace(priceId) && string.IsNullOrWhiteSpace(productId))
@@ -42,11 +44,7 @@ public class StripeSettings
 
         foreach (var (tierKey, options) in Prices)
         {
-            if (string.Equals(options.Monthly, priceId, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(options.Annual, priceId, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(options.Lifetime, priceId, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(options.Monthly, productId, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(options.Annual, productId, StringComparison.OrdinalIgnoreCase) ||
+            if (string.Equals(options.Lifetime, priceId, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(options.Lifetime, productId, StringComparison.OrdinalIgnoreCase))
             {
                 return Enum.TryParse<SubscriptionTier>(tierKey, true, out var tier) ? tier : null;
@@ -59,9 +57,15 @@ public class StripeSettings
     public static bool IsProductId(string? id) => !string.IsNullOrWhiteSpace(id) && id.StartsWith("prod_", StringComparison.OrdinalIgnoreCase);
 }
 
+/// <summary>
+/// Stripe price configuration for a subscription tier.
+/// Only lifetime (one-time) payments are supported.
+/// </summary>
 public class StripePriceOptions
 {
-    public string Monthly { get; set; } = string.Empty;
-    public string Annual { get; set; } = string.Empty;
+    /// <summary>
+    /// Stripe price ID for one-time payment.
+    /// Can be a price ID (price_xxx) or product ID (prod_xxx).
+    /// </summary>
     public string Lifetime { get; set; } = string.Empty;
 }

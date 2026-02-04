@@ -1,8 +1,10 @@
 namespace WeddingManager.Domain.Enums;
 
+/// <summary>
+/// Billing interval for one-time purchases.
+/// Only Lifetime (one-time payment) is supported.
+/// </summary>
 public enum BillingInterval
 {
-    Monthly = 0,
-    Annual = 1,
-    Lifetime = 2
+    Lifetime = 0
 }

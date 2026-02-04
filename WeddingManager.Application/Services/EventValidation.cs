@@ -15,7 +15,7 @@ public static class EventValidation
         return ValidateInput(requestDto.Name, requestDto.Location, requestDto.StartDate, requestDto.EndDate);
     }
 
-    private static Result ValidateInput(string name, string location, DateTime startDate, DateTime endDate)
+    private static Result ValidateInput(string name, string location, DateTime startDate, DateTime? endDate)
     {
         var errors = new List<Error>();
 
@@ -28,10 +28,8 @@ public static class EventValidation
         if (startDate == default)
             errors.Add(new Error(ErrorCodes.Validation, "Event start date is required"));
 
-        if (endDate == default)
-            errors.Add(new Error(ErrorCodes.Validation, "Event end date is required"));
-
-        if (endDate < startDate)
+        // EndDate is optional, but if provided must be on or after start date
+        if (endDate.HasValue && endDate.Value < startDate)
             errors.Add(new Error(ErrorCodes.Validation, "Event end date must be on or after start date"));
 
         return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();
