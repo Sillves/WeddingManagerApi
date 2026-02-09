@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(Remove-Item \"C:\\\\Users\\\\loren\\\\RiderProjects\\\\WeddingManagerApi\\\\WeddingManager.Web\\\\Endpoints\\\\Billing\\\\ChangeBillingPlanEndpoint.cs\")",
-      "Bash(dotnet build:*)"
-    ]
-  }
-}
