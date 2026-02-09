@@ -21,3 +21,9 @@ riderModule.iml
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/
+
+# OS
+.DS_Store
+
+# Claude Code
+.claude/settings.local.json
