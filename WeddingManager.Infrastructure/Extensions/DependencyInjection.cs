@@ -60,6 +60,7 @@ public static class DependencyInjection
         services.AddScoped<IWeddingUserRepository, WeddingUserRepository>();
         services.AddScoped<ISubscriptionUsageRepository, SubscriptionUsageRepository>();
         services.AddScoped<IWeddingExpenseRepository, WeddingExpenseRepository>();
+        services.AddScoped<IWeddingBudgetRepository, WeddingBudgetRepository>();
         services.AddScoped<IWeddingWebsiteRepository, WeddingWebsiteRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IMediaService, MediaService>();

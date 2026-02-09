@@ -18,4 +18,5 @@ public class Wedding
     public ICollection<Event> Events { get; set; } = null!;
     public ICollection<WeddingExpense> Expenses { get; set; } = null!;
     public WeddingWebsite? Website { get; set; }
+    public WeddingBudget? Budget { get; set; }
 }

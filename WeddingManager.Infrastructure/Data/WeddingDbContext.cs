@@ -18,6 +18,8 @@ public class WeddingDbContext(DbContextOptions<WeddingDbContext> options)
     public DbSet<SubscriptionUsage> SubscriptionUsages => Set<SubscriptionUsage>();
     public DbSet<WeddingExpense> WeddingExpenses => Set<WeddingExpense>();
     public DbSet<WeddingWebsite> WeddingWebsites => Set<WeddingWebsite>();
+    public DbSet<WeddingBudget> WeddingBudgets => Set<WeddingBudget>();
+    public DbSet<BudgetAllocation> BudgetAllocations => Set<BudgetAllocation>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

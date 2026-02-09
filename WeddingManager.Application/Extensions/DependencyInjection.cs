@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<ISubscriptionLimitService, SubscriptionLimitService>();
         services.AddScoped<IBillingService, BillingService>();
         services.AddScoped<IWeddingExpenseService, WeddingExpenseService>();
+        services.AddScoped<IWeddingBudgetService, WeddingBudgetService>();
         services.AddScoped<IWeddingWebsiteService, WeddingWebsiteService>();
 
         // Register Mapperly mapper as singleton (it's stateless)

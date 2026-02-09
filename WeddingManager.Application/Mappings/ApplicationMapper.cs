@@ -123,6 +123,11 @@ public partial class ApplicationMapper
         };
     }
 
+    // Budget mappings
+    public partial WeddingBudgetDto BudgetToDto(WeddingBudget budget);
+    public partial BudgetAllocationDto AllocationToDto(BudgetAllocation allocation);
+    public partial List<BudgetAllocationDto> AllocationsToListDto(ICollection<BudgetAllocation> allocations);
+
     // Media mappings
     [MapProperty(nameof(Media.S3Url), nameof(MediaUploadResponseDto.Url))]
     public partial MediaUploadResponseDto MediaToDto(Media media);
