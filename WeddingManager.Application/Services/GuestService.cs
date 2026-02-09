@@ -277,6 +277,106 @@ public class GuestService(
         await guestRepository.UpdateAsync(guest);
     }
 
+    public async Task<Result<BulkImportGuestResultDto>> ImportGuestsAsync(Guid weddingId, BulkImportGuestRequestDto requestDto)
+    {
+        if (requestDto.Guests.Count == 0)
+        {
+            return Result<BulkImportGuestResultDto>.Ok(new BulkImportGuestResultDto());
+        }
+
+        if (requestDto.Guests.Count > 500)
+        {
+            return Result<BulkImportGuestResultDto>.Fail(
+                new Error(ErrorCodes.Validation, "Cannot import more than 500 guests at once"));
+        }
+
+        var limitResult = await subscriptionLimitService.EnsureGuestLimitAsync(weddingId, requestDto.Guests.Count);
+        if (!limitResult.IsSuccess)
+        {
+            return Result<BulkImportGuestResultDto>.Fail(limitResult.Errors);
+        }
+
+        var candidateEmails = requestDto.Guests.Select(g => g.Email).Distinct();
+        var existingEmails = new HashSet<string>(
+            await guestRepository.GetExistingEmailsAsync(weddingId, candidateEmails),
+            StringComparer.OrdinalIgnoreCase);
+
+        var batchEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var validGuests = new List<Guest>();
+        var result = new BulkImportGuestResultDto();
+
+        for (var i = 0; i < requestDto.Guests.Count; i++)
+        {
+            var item = requestDto.Guests[i];
+
+            var validationResult = GuestValidation.ValidateImportItem(item);
+            if (!validationResult.IsSuccess)
+            {
+                result.Errors.Add(new BulkImportGuestErrorDto
+                {
+                    RowIndex = i,
+                    Name = item.Name,
+                    Email = item.Email,
+                    ErrorMessage = string.Join("; ", validationResult.Errors.Select(e => e.Message))
+                });
+                result.ErrorCount++;
+                continue;
+            }
+
+            if (existingEmails.Contains(item.Email))
+            {
+                result.Errors.Add(new BulkImportGuestErrorDto
+                {
+                    RowIndex = i,
+                    Name = item.Name,
+                    Email = item.Email,
+                    ErrorMessage = $"A guest with email {item.Email} already exists for this wedding"
+                });
+                result.SkippedCount++;
+                continue;
+            }
+
+            if (!batchEmails.Add(item.Email))
+            {
+                result.Errors.Add(new BulkImportGuestErrorDto
+                {
+                    RowIndex = i,
+                    Name = item.Name,
+                    Email = item.Email,
+                    ErrorMessage = $"Duplicate email {item.Email} in import batch"
+                });
+                result.SkippedCount++;
+                continue;
+            }
+
+            validGuests.Add(new Guest
+            {
+                Id = Guid.NewGuid(),
+                Name = item.Name,
+                Email = item.Email,
+                RsvpStatus = item.RsvpStatus,
+                PreferredLanguage = NormalizeLanguage(item.PreferredLanguage),
+                WeddingId = weddingId
+            });
+        }
+
+        if (validGuests.Count > 0)
+        {
+            await guestRepository.AddRangeAsync(validGuests);
+        }
+
+        result.CreatedCount = validGuests.Count;
+        result.CreatedGuests = mapper.GuestsToDto(validGuests).ToList();
+
+        return Result<BulkImportGuestResultDto>.Ok(result);
+    }
+
+    public async Task<Result<IEnumerable<string>>> CheckExistingEmailsAsync(Guid weddingId, IEnumerable<string> emails)
+    {
+        var existing = await guestRepository.GetExistingEmailsAsync(weddingId, emails);
+        return Result<IEnumerable<string>>.Ok(existing);
+    }
+
     private static string NormalizeLanguage(string? language)
     {
         if (string.IsNullOrWhiteSpace(language))

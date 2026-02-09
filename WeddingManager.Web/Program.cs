@@ -1,4 +1,3 @@
-using Microsoft.Extensions.FileProviders;
 using WeddingManager.Application.Extensions;
 using WeddingManager.Infrastructure.Extensions;
 using WeddingManager.Web.Endpoints;
@@ -39,20 +38,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     // CORS must be before static files to apply to all requests
     app.UseCors("AllowFrontend");
-    
-    // Serve static files for local media storage (development)
-    app.UseStaticFiles();
-
-    // Serve uploaded files from the uploads directory
-    var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
-    if (Directory.Exists(uploadsPath))
-    {
-        app.UseStaticFiles(new StaticFileOptions
-        {
-            FileProvider = new PhysicalFileProvider(uploadsPath),
-            RequestPath = "/uploads"
-        });
-    }
 
 }
 

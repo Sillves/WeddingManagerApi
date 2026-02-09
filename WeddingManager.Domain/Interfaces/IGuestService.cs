@@ -13,4 +13,6 @@ public interface IGuestService
     Task<Result> SendInvitationAsync(Guid weddingId, Guid guestId);
     Task<Result<InvitationSendResultDto>> SendInvitationsAsync(Guid weddingId, IReadOnlyCollection<Guid>? guestIds);
     Task<Result> DeleteGuestAsync(Guid guestId);
+    Task<Result<BulkImportGuestResultDto>> ImportGuestsAsync(Guid weddingId, BulkImportGuestRequestDto requestDto);
+    Task<Result<IEnumerable<string>>> CheckExistingEmailsAsync(Guid weddingId, IEnumerable<string> emails);
 }

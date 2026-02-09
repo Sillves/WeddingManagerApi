@@ -46,6 +46,29 @@ public class GuestRepository(WeddingDbContext context) : IGuestRepository
         await context.SaveChangesAsync();
     }
 
+    public async Task AddRangeAsync(IEnumerable<Guest> guests)
+    {
+        await context.Guests.AddRangeAsync(guests);
+        await context.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<string>> GetEmailsByWeddingIdAsync(Guid weddingId)
+    {
+        return await context.Guests
+            .Where(g => g.WeddingId == weddingId)
+            .Select(g => g.Email)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<string>> GetExistingEmailsAsync(Guid weddingId, IEnumerable<string> emails)
+    {
+        var emailList = emails.ToList();
+        return await context.Guests
+            .Where(g => g.WeddingId == weddingId && emailList.Contains(g.Email))
+            .Select(g => g.Email)
+            .ToListAsync();
+    }
+
     public async Task UpdateAsync(Guest guest)
     {
         context.Guests.Update(guest);

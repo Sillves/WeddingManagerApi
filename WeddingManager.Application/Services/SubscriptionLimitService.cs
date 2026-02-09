@@ -46,6 +46,43 @@ public class SubscriptionLimitService(
         return Result.Ok();
     }
 
+    public async Task<Result> EnsureGuestLimitAsync(Guid weddingId, int count)
+    {
+        if (count <= 0)
+        {
+            return Result.Ok();
+        }
+
+        var weddingResult = await GetWeddingAsync(weddingId);
+        if (!weddingResult.IsSuccess)
+        {
+            return Result.Fail(weddingResult.Errors);
+        }
+
+        var limitsResult = GetLimits(weddingResult.Value!);
+        if (!limitsResult.IsSuccess)
+        {
+            return Result.Fail(limitsResult.Errors);
+        }
+
+        var limits = limitsResult.Value!;
+
+        if (limits.MaxGuests < 0)
+        {
+            return Result.Ok();
+        }
+
+        var currentCount = await guestRepository.CountByWeddingIdAsync(weddingId);
+        if (currentCount + count > limits.MaxGuests)
+        {
+            return Result.Fail(new Error(
+                ErrorCodes.LimitExceeded,
+                $"Adding {count} guests would exceed the guest limit for the {weddingResult.Value!.User.SubscriptionTier} plan."));
+        }
+
+        return Result.Ok();
+    }
+
     public async Task<Result> EnsureEventLimitAsync(Guid weddingId)
     {
         var weddingResult = await GetWeddingAsync(weddingId);

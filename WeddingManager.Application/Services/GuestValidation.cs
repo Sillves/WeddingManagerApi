@@ -60,7 +60,25 @@ public static class GuestValidation
         return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();
     }
 
-    private static bool IsValidEmail(string email)
+    public static Result ValidateImportItem(BulkImportGuestItemDto item)
+    {
+        var errors = new List<Error>();
+
+        if (string.IsNullOrWhiteSpace(item.Name))
+            errors.Add(new Error(ErrorCodes.Validation, "Guest name is required"));
+
+        if (string.IsNullOrWhiteSpace(item.Email))
+            errors.Add(new Error(ErrorCodes.Validation, "Guest email is required"));
+        else if (!IsValidEmail(item.Email))
+            errors.Add(new Error(ErrorCodes.Validation, "Guest email is not valid"));
+
+        if (!IsSupportedLanguage(item.PreferredLanguage))
+            errors.Add(new Error(ErrorCodes.Validation, "Guest language is not supported"));
+
+        return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();
+    }
+
+    internal static bool IsValidEmail(string email)
     {
         try
         {
@@ -73,7 +91,7 @@ public static class GuestValidation
         }
     }
 
-    private static bool IsSupportedLanguage(string? language)
+    internal static bool IsSupportedLanguage(string? language)
     {
         if (string.IsNullOrWhiteSpace(language))
         {
