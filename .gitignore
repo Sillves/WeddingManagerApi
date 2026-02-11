@@ -9,6 +9,7 @@ riderModule.iml
 # Default ignored files
 /shelf/
 /workspace.xml
+*.DotSettings.user
 # Rider ignored files
 /.idea.WeddingManagerApi.iml
 /modules.xml
