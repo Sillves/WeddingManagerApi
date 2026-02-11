@@ -1,5 +1,6 @@
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
 using WeddingManager.Web.Models;
 
@@ -15,6 +16,7 @@ public class UpdateExpenseEndpoint : IEndpoint
                 var result = await expenseService.UpdateExpenseAsync(expenseId, request);
                 return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
             })
+            .AddEndpointFilter<RequireExpenseAccessFilter>()
             .WithTags("Expenses")
             .WithName("UpdateExpense")
             .RequireAuthorization()

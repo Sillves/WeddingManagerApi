@@ -20,6 +20,7 @@ public class ForgotPasswordEndpoint : IEndpoint
         })
         .WithTags("Auth")
         .WithName("ForgotPassword")
+        .RequireRateLimiting("AuthEndpoint")
         .Produces(200)
         .Produces<ErrorResponse>(502);
     }

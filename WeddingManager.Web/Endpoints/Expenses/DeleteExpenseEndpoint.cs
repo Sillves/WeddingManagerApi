@@ -1,4 +1,5 @@
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
 using WeddingManager.Web.Models;
 
@@ -14,6 +15,7 @@ public class DeleteExpenseEndpoint : IEndpoint
                 var result = await expenseService.DeleteExpenseAsync(expenseId);
                 return result.IsSuccess ? Results.NoContent() : result.ToErrorResult();
             })
+            .AddEndpointFilter<RequireExpenseAccessFilter>()
             .WithTags("Expenses")
             .WithName("DeleteExpense")
             .RequireAuthorization()

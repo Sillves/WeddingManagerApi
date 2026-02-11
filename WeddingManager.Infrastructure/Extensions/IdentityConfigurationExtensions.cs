@@ -16,6 +16,9 @@ public static class IdentityExtensions
             options.Password.RequireUppercase = true;
             options.Password.RequireNonAlphanumeric = false;
             options.User.RequireUniqueEmail = true;
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            options.Lockout.AllowedForNewUsers = true;
         })
         .AddEntityFrameworkStores<WeddingDbContext>()
         .AddDefaultTokenProviders();

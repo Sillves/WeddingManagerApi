@@ -20,6 +20,7 @@ public class LoginEndpoint : IEndpoint
         })
         .WithTags("Auth")
         .WithName("Login")
+        .RequireRateLimiting("AuthEndpoint")
         .Produces<AuthResult>(200)
         .Produces<ErrorResponse>(401);
     }

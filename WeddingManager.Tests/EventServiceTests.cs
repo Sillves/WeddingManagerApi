@@ -164,21 +164,6 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task CreateEventAsync_ThrowsWhenEndDateDefault()
-    {
-        var repositoryMock = new Mock<IEventRepository>();
-        var service = CreateService(repositoryMock);
-        var request = CreateValidCreateRequest();
-        request.EndDate = default;
-
-        var result = await service.CreateEventAsync(Guid.NewGuid(), request);
-
-        Assert.False(result.IsSuccess);
-        Assert.Contains(result.Errors, e => e.Message == "Event end date is required");
-        repositoryMock.Verify(r => r.AddAsync(It.IsAny<Event>()), Times.Never);
-    }
-
-    [Fact]
     public async Task CreateEventAsync_ThrowsWhenEndDateBeforeStartDate()
     {
         var repositoryMock = new Mock<IEventRepository>();

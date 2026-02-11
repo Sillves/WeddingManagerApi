@@ -19,6 +19,7 @@ public class ResetPasswordEndpoint : IEndpoint
         })
         .WithTags("Auth")
         .WithName("ResetPassword")
+        .RequireRateLimiting("AuthEndpoint")
         .Produces(200)
         .Produces<ErrorResponse>(400)
         .Produces<ErrorResponse>(404);

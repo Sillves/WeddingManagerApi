@@ -51,10 +51,24 @@ public class AuthService(
     public async Task<Result<AuthResult>> LoginAsync(string email, string password)
     {
         var user = await userManager.FindByEmailAsync(email);
-        if (user == null || !await userManager.CheckPasswordAsync(user, password))
+        if (user == null)
         {
             return Result<AuthResult>.Fail(new Error(ErrorCodes.Unauthorized, "Invalid credentials"));
         }
+
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            logger.LogWarning("Locked out login attempt for {Email}", email);
+            return Result<AuthResult>.Fail(new Error(ErrorCodes.AccountLocked, "Account is locked due to multiple failed login attempts. Please try again later."));
+        }
+
+        if (!await userManager.CheckPasswordAsync(user, password))
+        {
+            await userManager.AccessFailedAsync(user);
+            return Result<AuthResult>.Fail(new Error(ErrorCodes.Unauthorized, "Invalid credentials"));
+        }
+
+        await userManager.ResetAccessFailedCountAsync(user);
 
         var token = GenerateJwtToken(user);
         return Result<AuthResult>.Ok(new AuthResult

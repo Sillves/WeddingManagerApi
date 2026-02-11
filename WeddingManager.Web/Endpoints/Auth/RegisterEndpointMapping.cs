@@ -27,6 +27,7 @@ public class RegisterEndpoint : IEndpoint
         // .AddEndpointFilter<RequireRegistrationFilter>()
         .WithTags("Auth")
         .WithName("Register")
+        .RequireRateLimiting("AuthEndpoint")
         .Produces<AuthResult>((int)HttpStatusCode.Created)
         .Produces<ErrorResponse>((int)HttpStatusCode.Forbidden)
         .Produces<ErrorResponse>((int)HttpStatusCode.BadRequest);

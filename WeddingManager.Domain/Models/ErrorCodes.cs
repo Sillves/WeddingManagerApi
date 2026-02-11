@@ -9,5 +9,6 @@ public static class ErrorCodes
     public const string Conflict = "conflict";
     public const string LimitExceeded = "limit_exceeded";
     public const string ExternalFailure = "external_failure";
+    public const string AccountLocked = "account_locked";
     public const string Unexpected = "unexpected";
 }

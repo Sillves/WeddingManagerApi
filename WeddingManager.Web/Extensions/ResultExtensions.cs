@@ -28,6 +28,7 @@ public static class ResultExtensions
             ErrorCodes.Forbidden => StatusCodes.Status403Forbidden,
             ErrorCodes.Conflict => StatusCodes.Status409Conflict,
             ErrorCodes.LimitExceeded => StatusCodes.Status403Forbidden,
+            ErrorCodes.AccountLocked => 423, // Locked
             ErrorCodes.ExternalFailure => StatusCodes.Status502BadGateway,
             _ => StatusCodes.Status500InternalServerError
         };

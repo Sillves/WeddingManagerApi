@@ -21,9 +21,34 @@ env:
   IMAGE_NAME: api
 
 jobs:
-  build-and-push:
+  test:
     runs-on: ubuntu-latest
-    
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore WeddingManagerApi.sln
+
+      - name: Build
+        run: dotnet build WeddingManagerApi.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test WeddingManager.Tests/WeddingManager.Tests.csproj --configuration Release --no-build
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+
     permissions:
       contents: read
 

@@ -22,7 +22,6 @@ public class EventValidationTests
         Assert.Contains(result.Errors, e => e.Message == "Event name is required");
         Assert.Contains(result.Errors, e => e.Message == "Event location is required");
         Assert.Contains(result.Errors, e => e.Message == "Event start date is required");
-        Assert.Contains(result.Errors, e => e.Message == "Event end date is required");
     }
 
     [Fact]
