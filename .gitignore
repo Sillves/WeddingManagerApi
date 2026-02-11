@@ -26,5 +26,8 @@ riderModule.iml
 # OS
 .DS_Store
 
+# Test results & coverage
+TestResults*/
+
 # Claude Code
 .claude/settings.local.json
