@@ -21,12 +21,12 @@ public class CreateWedding : IEndpoint
                 return result.ToErrorResult();
             }
 
-            return Results.Created($"/api/weddings/{wedding.Id}", wedding);
+            return Results.Created($"/api/weddings/{wedding.Id}", mapper.WeddingToDto(wedding));
         })
         .WithTags("Weddings")
         .WithName("CreateWedding")
         .RequireAuthorization()
-        .Produces<Wedding>(201)
+        .Produces<WeddingDto>(201)
         .Produces<ErrorResponse>(401);
     }
 }
