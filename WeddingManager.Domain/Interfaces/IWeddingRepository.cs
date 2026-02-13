@@ -5,6 +5,7 @@ namespace WeddingManager.Domain.Interfaces;
 public interface IWeddingRepository
 {
     Task<IEnumerable<Wedding>> GetAllAsync(Guid userId);
+    Task<IEnumerable<(Wedding Wedding, WeddingUser WeddingUser)>> GetAllWithRoleAsync(Guid userId);
     Task<Wedding?> GetByIdAsync(Guid id);
     Task<Wedding?> GetByIdOrSlugAsync(string idOrSlug);
     Task<IEnumerable<Wedding>> GetWeddingsWithMediaOlderThanAsync(DateTime cutoffDate);

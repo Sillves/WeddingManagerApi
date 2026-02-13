@@ -265,6 +265,47 @@ public class SmtpEmailService(
         return builder.ToString();
     }
 
+    public async Task SendPlannerInvitationAsync(WeddingInvitation invitation, Wedding wedding)
+    {
+        if (!_smtpSettings.IsConfigured())
+        {
+            logger.LogInformation("Email settings not configured; skipping planner invitation email.");
+            return;
+        }
+
+        var frontendBaseUrl = _frontendSettings.BaseUrl;
+        var inviteLink = $"{frontendBaseUrl}/invite/{invitation.Token}";
+        var weddingTitle = WebUtility.HtmlEncode(wedding.Title);
+        var coupleName = WebUtility.HtmlEncode($"{wedding.User?.FirstName} & {wedding.User?.LastName}");
+
+        var subject = $"You're invited to collaborate on {wedding.Title} — Amare.Wedding";
+        var body = new StringBuilder();
+        body.Append("<html><body style=\"font-family: Arial, sans-serif; color: #111; max-width: 600px; margin: 0 auto;\">");
+        body.Append("<h2>You've been invited!</h2>");
+        body.Append($"<p>{coupleName} has invited you to collaborate on their wedding <strong>{weddingTitle}</strong> as a planner on Amare.Wedding.</p>");
+        body.Append("<p style=\"margin: 30px 0;\">");
+        body.Append($"<a href=\"{WebUtility.HtmlEncode(inviteLink)}\" style=\"display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;\">Accept Invitation</a>");
+        body.Append("</p>");
+        body.Append("<p style=\"color: #666; font-size: 14px;\">This invitation expires in 30 days.</p>");
+        body.Append($"<p style=\"color: #999; font-size: 12px;\">If the button doesn't work, copy this link: {WebUtility.HtmlEncode(inviteLink)}</p>");
+        body.Append("</body></html>");
+
+        using var message = new MailMessage(_smtpSettings.FromAddress, invitation.Email);
+        message.Subject = subject;
+        message.Body = body.ToString();
+        message.IsBodyHtml = true;
+
+        using var client = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port);
+        client.EnableSsl = _smtpSettings.UseSsl;
+
+        if (!string.IsNullOrWhiteSpace(_smtpSettings.Username))
+        {
+            client.Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password);
+        }
+
+        await client.SendMailAsync(message);
+    }
+
     private static string NormalizeLanguage(string? language)
     {
         return string.IsNullOrWhiteSpace(language) ? "en" : language.Trim().ToLowerInvariant();

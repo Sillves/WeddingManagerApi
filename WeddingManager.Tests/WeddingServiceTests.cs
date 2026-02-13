@@ -1,5 +1,6 @@
 using Moq;
 using WeddingManager.Application.Services;
+using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
@@ -121,6 +122,45 @@ public class WeddingServiceTests
         Assert.True(result.IsSuccess);
         Assert.Same(weddings, result.Value);
         repositoryMock.Verify(r => r.GetAllAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllWithRoleAsync_ReturnsDtosWithPermissions()
+    {
+        var userId = Guid.NewGuid();
+        var weddingId = Guid.NewGuid();
+        var wedding = new Wedding
+        {
+            Id = weddingId, Title = "Test", Slug = "test", Date = DateTime.UtcNow,
+            Location = "Amsterdam", Guests = new List<Guest> { new() { Name = "G1", Email = "g@test.com" } }
+        };
+        var weddingUser = new WeddingUser
+        {
+            WeddingId = weddingId, UserId = userId, Role = WeddingUserRole.Planner,
+            CanAccessGuests = true, CanAccessEvents = false, CanAccessExpenses = true,
+            CanAccessWebsite = false, IsReadOnly = true, Wedding = wedding
+        };
+        var repositoryMock = new Mock<IWeddingRepository>();
+        repositoryMock.Setup(r => r.GetAllWithRoleAsync(userId))
+            .ReturnsAsync(new List<(Wedding, WeddingUser)> { (wedding, weddingUser) });
+        var userContextMock = new Mock<IUserContextService>();
+        userContextMock.Setup(s => s.GetUserId()).Returns(userId);
+        var service = CreateService(repositoryMock, userContextMock);
+
+        var result = await service.GetAllWithRoleAsync();
+
+        Assert.True(result.IsSuccess);
+        var dtos = result.Value!.ToList();
+        Assert.Single(dtos);
+        Assert.Equal(weddingId, dtos[0].Id);
+        Assert.Equal("Test", dtos[0].Title);
+        Assert.Equal(WeddingUserRole.Planner, dtos[0].Role);
+        Assert.Equal(1, dtos[0].GuestCount);
+        Assert.True(dtos[0].CanAccessGuests);
+        Assert.False(dtos[0].CanAccessEvents);
+        Assert.True(dtos[0].CanAccessExpenses);
+        Assert.False(dtos[0].CanAccessWebsite);
+        Assert.True(dtos[0].IsReadOnly);
     }
 
     [Fact]

@@ -15,6 +15,17 @@ public class WeddingRepository(WeddingDbContext context) : IWeddingRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<(Wedding Wedding, WeddingUser WeddingUser)>> GetAllWithRoleAsync(Guid userId)
+    {
+        var weddingUsers = await context.WeddingUsers
+            .Where(wu => wu.UserId == userId)
+            .Include(wu => wu.Wedding)
+                .ThenInclude(w => w.Guests)
+            .ToListAsync();
+
+        return weddingUsers.Select(wu => (wu.Wedding, wu));
+    }
+
     public async Task<Wedding?> GetByIdAsync(Guid id)
     {
         return await context.Weddings

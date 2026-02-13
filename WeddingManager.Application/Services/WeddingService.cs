@@ -1,4 +1,5 @@
-﻿using WeddingManager.Domain.Entities;
+﻿using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Entities;
 using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
@@ -43,6 +44,28 @@ public class WeddingService(
         var userId = userContextService.GetUserId();
         var weddings = await repository.GetAllAsync(userId);
         return Result<IEnumerable<Wedding>>.Ok(weddings);
+    }
+
+    public async Task<Result<IEnumerable<WeddingWithRoleDto>>> GetAllWithRoleAsync()
+    {
+        var userId = userContextService.GetUserId();
+        var results = await repository.GetAllWithRoleAsync(userId);
+        var dtos = results.Select(r => new WeddingWithRoleDto
+        {
+            Id = r.Wedding.Id,
+            Title = r.Wedding.Title,
+            Slug = r.Wedding.Slug,
+            Date = r.Wedding.Date,
+            Location = r.Wedding.Location,
+            Role = r.WeddingUser.Role,
+            GuestCount = r.Wedding.Guests?.Count ?? 0,
+            CanAccessGuests = r.WeddingUser.CanAccessGuests,
+            CanAccessEvents = r.WeddingUser.CanAccessEvents,
+            CanAccessExpenses = r.WeddingUser.CanAccessExpenses,
+            CanAccessWebsite = r.WeddingUser.CanAccessWebsite,
+            IsReadOnly = r.WeddingUser.IsReadOnly,
+        });
+        return Result<IEnumerable<WeddingWithRoleDto>>.Ok(dtos);
     }
 
     public async Task<Result> AddAsync(Wedding wedding)

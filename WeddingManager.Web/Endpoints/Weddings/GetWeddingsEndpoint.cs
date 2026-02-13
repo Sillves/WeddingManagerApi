@@ -1,4 +1,3 @@
-using WeddingManager.Application.Mappings;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Extensions;
@@ -10,21 +9,15 @@ public class GetWeddings : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("/weddings", async (IWeddingService weddingService, ApplicationMapper mapper) =>
+        app.MapGet("/weddings", async (IWeddingService weddingService) =>
         {
-            var result = await weddingService.GetAllAsync();
-            if (!result.IsSuccess)
-            {
-                return result.ToErrorResult();
-            }
-
-            var dtos = mapper.WeddingsToDto(result.Value!);
-            return Results.Ok(dtos);
+            var result = await weddingService.GetAllWithRoleAsync();
+            return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
         })
         .WithTags("Weddings")
         .WithName("GetWeddings")
         .RequireAuthorization()
-        .Produces<IEnumerable<WeddingDto>>(200)
+        .Produces<IEnumerable<WeddingWithRoleDto>>(200)
         .Produces<ErrorResponse>(401);
     }
 }
