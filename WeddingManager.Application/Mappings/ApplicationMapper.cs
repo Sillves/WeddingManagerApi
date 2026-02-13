@@ -79,7 +79,12 @@ public partial class ApplicationMapper
                 ? $"{weddingUser.User.FirstName} {weddingUser.User.LastName}"
                 : string.Empty,
             Role = weddingUser.Role,
-            AddedAt = weddingUser.AddedAt
+            AddedAt = weddingUser.AddedAt,
+            CanAccessGuests = weddingUser.CanAccessGuests,
+            CanAccessEvents = weddingUser.CanAccessEvents,
+            CanAccessExpenses = weddingUser.CanAccessExpenses,
+            CanAccessWebsite = weddingUser.CanAccessWebsite,
+            IsReadOnly = weddingUser.IsReadOnly,
         };
     }
 

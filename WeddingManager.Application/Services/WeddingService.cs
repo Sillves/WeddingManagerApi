@@ -1,10 +1,14 @@
 ﻿using WeddingManager.Domain.Entities;
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
 
 namespace WeddingManager.Application.Services;
 
-public class WeddingService(IWeddingRepository repository, IUserContextService userContextService) : IWeddingService
+public class WeddingService(
+    IWeddingRepository repository,
+    IUserContextService userContextService,
+    IWeddingUserRepository weddingUserRepository) : IWeddingService
 {
     public async Task<Result<Wedding>> GetByIdAsync(Guid id)
     {
@@ -52,6 +56,21 @@ public class WeddingService(IWeddingRepository repository, IUserContextService u
         wedding.Slug = GenerateSlug(wedding.Title);
         
         await repository.AddAsync(wedding);
+
+        var ownerWeddingUser = new WeddingUser
+        {
+            WeddingId = wedding.Id,
+            UserId = wedding.UserId,
+            Role = WeddingUserRole.Owner,
+            AddedAt = DateTime.UtcNow,
+            CanAccessGuests = true,
+            CanAccessEvents = true,
+            CanAccessExpenses = true,
+            CanAccessWebsite = true,
+            IsReadOnly = false,
+        };
+        await weddingUserRepository.AddAsync(ownerWeddingUser);
+
         return Result.Ok();
     }
     

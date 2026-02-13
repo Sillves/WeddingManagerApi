@@ -10,4 +10,9 @@ public class WeddingUserDto
     public string UserName { get; set; } = string.Empty;
     public WeddingUserRole Role { get; set; }
     public DateTime AddedAt { get; set; }
+    public bool CanAccessGuests { get; set; }
+    public bool CanAccessEvents { get; set; }
+    public bool CanAccessExpenses { get; set; }
+    public bool CanAccessWebsite { get; set; }
+    public bool IsReadOnly { get; set; }
 }

@@ -1,4 +1,5 @@
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
 using WeddingManager.Web.Models;
 
@@ -8,7 +9,7 @@ public class RemoveWeddingUserEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/weddings/{weddingId}/users/{userId}", 
+        app.MapDelete("/weddings/{weddingId}/users/{userId}",
             async (Guid weddingId, Guid userId, IWeddingUserService weddingUserService) =>
             {
                 var result = await weddingUserService.RemoveUserFromWeddingAsync(weddingId, userId);
@@ -17,6 +18,7 @@ public class RemoveWeddingUserEndpoint : IEndpoint
             .WithTags("WeddingUsers")
             .WithName("RemoveWeddingUser")
             .RequireAuthorization()
+            .AddEndpointFilter<RequireWeddingAccessFilter>()
             .Produces(204)
             .Produces<ErrorResponse>(401)
             .Produces<ErrorResponse>(403)

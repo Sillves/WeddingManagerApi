@@ -9,6 +9,12 @@ public class WeddingUser
     public WeddingUserRole Role { get; set; } = WeddingUserRole.Owner;
     public DateTime AddedAt { get; set; } = DateTime.UtcNow;
 
+    public bool CanAccessGuests { get; set; } = true;
+    public bool CanAccessEvents { get; set; } = true;
+    public bool CanAccessExpenses { get; set; } = true;
+    public bool CanAccessWebsite { get; set; } = false;
+    public bool IsReadOnly { get; set; } = false;
+
     public Wedding Wedding { get; set; } = null!;
     public User User { get; set; } = null!;
 }

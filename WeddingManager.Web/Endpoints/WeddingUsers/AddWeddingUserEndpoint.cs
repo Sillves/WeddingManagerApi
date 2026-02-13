@@ -1,5 +1,6 @@
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
 using WeddingManager.Web.Models;
 
@@ -9,7 +10,7 @@ public class AddWeddingUserEndpoint : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapPost("/weddings/{weddingId}/users", 
+        app.MapPost("/weddings/{weddingId}/users",
             async (Guid weddingId, AddWeddingUserRequestDto requestDto, IWeddingUserService weddingUserService) =>
             {
                 var result = await weddingUserService.AddUserToWeddingAsync(weddingId, requestDto);
@@ -24,6 +25,7 @@ public class AddWeddingUserEndpoint : IEndpoint
             .WithTags("WeddingUsers")
             .WithName("AddWeddingUser")
             .RequireAuthorization()
+            .AddEndpointFilter<RequireWeddingAccessFilter>()
             .Produces<WeddingUserDto>(201)
             .Produces<ErrorResponse>(400)
             .Produces<ErrorResponse>(401)

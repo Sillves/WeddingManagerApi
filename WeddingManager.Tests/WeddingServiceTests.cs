@@ -1,6 +1,7 @@
 using Moq;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.Entities;
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
 
@@ -8,6 +9,17 @@ namespace WeddingManager.Tests;
 
 public class WeddingServiceTests
 {
+    private static WeddingService CreateService(
+        Mock<IWeddingRepository>? repositoryMock = null,
+        Mock<IUserContextService>? userContextMock = null,
+        Mock<IWeddingUserRepository>? weddingUserRepoMock = null)
+    {
+        repositoryMock ??= new Mock<IWeddingRepository>();
+        userContextMock ??= new Mock<IUserContextService>();
+        weddingUserRepoMock ??= new Mock<IWeddingUserRepository>();
+        return new WeddingService(repositoryMock.Object, userContextMock.Object, weddingUserRepoMock.Object);
+    }
+
     [Fact]
     public async Task AddAsync_SetsIdSlugAndUserIdWhenMissing()
     {
@@ -16,7 +28,9 @@ public class WeddingServiceTests
         var userContextMock = new Mock<IUserContextService>();
         var userId = Guid.NewGuid();
         userContextMock.Setup(s => s.GetUserId()).Returns(userId);
-        var service = new WeddingService(repositoryMock.Object, userContextMock.Object);
+        var weddingUserRepoMock = new Mock<IWeddingUserRepository>();
+        weddingUserRepoMock.Setup(r => r.AddAsync(It.IsAny<WeddingUser>())).Returns(Task.CompletedTask);
+        var service = CreateService(repositoryMock, userContextMock, weddingUserRepoMock);
         var wedding = new Wedding
         {
             Id = Guid.NewGuid(),
@@ -42,7 +56,9 @@ public class WeddingServiceTests
         repositoryMock.Setup(r => r.AddAsync(It.IsAny<Wedding>())).Returns(Task.CompletedTask);
         var userContextMock = new Mock<IUserContextService>();
         userContextMock.Setup(s => s.GetUserId()).Returns(Guid.NewGuid());
-        var service = new WeddingService(repositoryMock.Object, userContextMock.Object);
+        var weddingUserRepoMock = new Mock<IWeddingUserRepository>();
+        weddingUserRepoMock.Setup(r => r.AddAsync(It.IsAny<WeddingUser>())).Returns(Task.CompletedTask);
+        var service = CreateService(repositoryMock, userContextMock, weddingUserRepoMock);
         var existingUserId = Guid.NewGuid();
         var wedding = new Wedding
         {
@@ -58,6 +74,35 @@ public class WeddingServiceTests
     }
 
     [Fact]
+    public async Task AddAsync_CreatesOwnerWeddingUser()
+    {
+        var userId = Guid.NewGuid();
+        var repositoryMock = new Mock<IWeddingRepository>();
+        repositoryMock.Setup(r => r.AddAsync(It.IsAny<Wedding>())).Returns(Task.CompletedTask);
+        var userContextMock = new Mock<IUserContextService>();
+        userContextMock.Setup(u => u.GetUserId()).Returns(userId);
+        var weddingUserRepoMock = new Mock<IWeddingUserRepository>();
+        WeddingUser? capturedWu = null;
+        weddingUserRepoMock.Setup(r => r.AddAsync(It.IsAny<WeddingUser>()))
+            .Callback<WeddingUser>(wu => capturedWu = wu).Returns(Task.CompletedTask);
+        var service = CreateService(repositoryMock, userContextMock, weddingUserRepoMock);
+
+        var wedding = new Wedding { Title = "Test Wedding" };
+        await service.AddAsync(wedding);
+
+        Assert.NotNull(capturedWu);
+        Assert.Equal(wedding.Id, capturedWu!.WeddingId);
+        Assert.Equal(userId, capturedWu.UserId);
+        Assert.Equal(WeddingUserRole.Owner, capturedWu.Role);
+        Assert.True(capturedWu.CanAccessGuests);
+        Assert.True(capturedWu.CanAccessEvents);
+        Assert.True(capturedWu.CanAccessExpenses);
+        Assert.True(capturedWu.CanAccessWebsite);
+        Assert.False(capturedWu.IsReadOnly);
+        weddingUserRepoMock.Verify(r => r.AddAsync(It.IsAny<WeddingUser>()), Times.Once);
+    }
+
+    [Fact]
     public async Task GetAllAsync_UsesUserContext()
     {
         var repositoryMock = new Mock<IWeddingRepository>();
@@ -69,7 +114,7 @@ public class WeddingServiceTests
             new() { Id = Guid.NewGuid(), UserId = userId, Title = "Test Wedding" }
         };
         repositoryMock.Setup(r => r.GetAllAsync(userId)).ReturnsAsync(weddings);
-        var service = new WeddingService(repositoryMock.Object, userContextMock.Object);
+        var service = CreateService(repositoryMock, userContextMock);
 
         var result = await service.GetAllAsync();
 
@@ -85,7 +130,7 @@ public class WeddingServiceTests
         var wedding = new Wedding { Id = weddingId, Title = "Found Wedding" };
         var repositoryMock = new Mock<IWeddingRepository>();
         repositoryMock.Setup(r => r.GetByIdAsync(weddingId)).ReturnsAsync(wedding);
-        var service = new WeddingService(repositoryMock.Object, new Mock<IUserContextService>().Object);
+        var service = CreateService(repositoryMock);
 
         var result = await service.GetByIdAsync(weddingId);
 
@@ -99,7 +144,7 @@ public class WeddingServiceTests
         var weddingId = Guid.NewGuid();
         var repositoryMock = new Mock<IWeddingRepository>();
         repositoryMock.Setup(r => r.GetByIdAsync(weddingId)).ReturnsAsync((Wedding?)null);
-        var service = new WeddingService(repositoryMock.Object, new Mock<IUserContextService>().Object);
+        var service = CreateService(repositoryMock);
 
         var result = await service.GetByIdAsync(weddingId);
 
@@ -113,7 +158,7 @@ public class WeddingServiceTests
         var wedding = new Wedding { Id = Guid.NewGuid(), Title = "Slug Wedding", Slug = "slug-wedding" };
         var repositoryMock = new Mock<IWeddingRepository>();
         repositoryMock.Setup(r => r.GetByIdOrSlugAsync("slug-wedding")).ReturnsAsync(wedding);
-        var service = new WeddingService(repositoryMock.Object, new Mock<IUserContextService>().Object);
+        var service = CreateService(repositoryMock);
 
         var result = await service.GetByIdOrSlugAsync("slug-wedding");
 
@@ -126,7 +171,7 @@ public class WeddingServiceTests
     {
         var repositoryMock = new Mock<IWeddingRepository>();
         repositoryMock.Setup(r => r.GetByIdOrSlugAsync("ghost")).ReturnsAsync((Wedding?)null);
-        var service = new WeddingService(repositoryMock.Object, new Mock<IUserContextService>().Object);
+        var service = CreateService(repositoryMock);
 
         var result = await service.GetByIdOrSlugAsync("ghost");
 
@@ -140,7 +185,7 @@ public class WeddingServiceTests
         var wedding = new Wedding { Id = Guid.NewGuid(), Title = "Updated" };
         var repositoryMock = new Mock<IWeddingRepository>();
         repositoryMock.Setup(r => r.UpdateAsync(wedding)).Returns(Task.CompletedTask);
-        var service = new WeddingService(repositoryMock.Object, new Mock<IUserContextService>().Object);
+        var service = CreateService(repositoryMock);
 
         var result = await service.UpdateAsync(wedding);
 
@@ -154,7 +199,7 @@ public class WeddingServiceTests
         var weddingId = Guid.NewGuid();
         var repositoryMock = new Mock<IWeddingRepository>();
         repositoryMock.Setup(r => r.DeleteAsync(weddingId)).Returns(Task.CompletedTask);
-        var service = new WeddingService(repositoryMock.Object, new Mock<IUserContextService>().Object);
+        var service = CreateService(repositoryMock);
 
         var result = await service.DeleteAsync(weddingId);
 

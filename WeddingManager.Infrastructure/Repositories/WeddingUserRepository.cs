@@ -29,6 +29,12 @@ public class WeddingUserRepository(WeddingDbContext context) : IWeddingUserRepos
         await context.SaveChangesAsync();
     }
 
+    public async Task UpdateAsync(WeddingUser weddingUser)
+    {
+        context.WeddingUsers.Update(weddingUser);
+        await context.SaveChangesAsync();
+    }
+
     public async Task DeleteAsync(Guid weddingId, Guid userId)
     {
         var weddingUser = await context.WeddingUsers.FindAsync(weddingId, userId);
