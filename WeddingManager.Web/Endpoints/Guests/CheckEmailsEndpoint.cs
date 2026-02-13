@@ -1,3 +1,4 @@
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
@@ -24,6 +25,7 @@ public class CheckEmailsEndpoint : IEndpoint
             .WithName("CheckEmails")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
+            .RequireModuleAccess(WeddingModule.Guests)
             .Produces<CheckEmailsResponse>(200)
             .Produces<ErrorResponse>(400)
             .Produces<ErrorResponse>(401)

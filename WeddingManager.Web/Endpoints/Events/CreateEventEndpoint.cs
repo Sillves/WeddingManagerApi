@@ -1,4 +1,5 @@
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
@@ -26,6 +27,7 @@ public class CreateEventEndpoint : IEndpoint
             .WithName("CreateEvent")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
+            .RequireModuleAccess(WeddingModule.Events)
             .Produces<EventDto>(201)
             .Produces<ErrorResponse>(400)
             .Produces<ErrorResponse>(401)

@@ -1,4 +1,5 @@
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
@@ -20,6 +21,7 @@ public class UpdateGuestEndpoint : IEndpoint
             .WithName("UpdateGuest")
             .RequireAuthorization()
             .AddEndpointFilter<RequireGuestAccessFilter>()
+            .RequireModuleAccess(WeddingModule.Guests)
             .Produces<GuestDto>(200)
             .Produces<ErrorResponse>(400)
             .Produces<ErrorResponse>(401)

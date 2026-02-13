@@ -1,3 +1,4 @@
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
@@ -19,6 +20,7 @@ public class SendGuestInvitationEndpoint : IEndpoint
             .WithName("SendGuestInvitation")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
+            .RequireModuleAccess(WeddingModule.Guests)
             .RequireRateLimiting("InvitationSend")
             .Produces(200)
             .Produces<ErrorResponse>(400)

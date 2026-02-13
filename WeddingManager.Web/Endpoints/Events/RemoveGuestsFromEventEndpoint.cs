@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
 using WeddingManager.Web.Authorization;
@@ -28,6 +29,7 @@ public class RemoveGuestsFromEventEndpoint : IEndpoint
             .WithName("RemoveGuestsFromEvent")
             .RequireAuthorization()
             .AddEndpointFilter<RequireEventAccessFilter>()
+            .RequireModuleAccess(WeddingModule.Events)
             .Produces<EventGuestBatchRemoveResultDto>(200)
             .Produces<ErrorResponse>(400)
             .Produces<ErrorResponse>(401)

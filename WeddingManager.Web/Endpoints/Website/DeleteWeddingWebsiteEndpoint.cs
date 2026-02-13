@@ -1,3 +1,4 @@
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
@@ -19,6 +20,7 @@ public class DeleteWeddingWebsiteEndpoint : IEndpoint
             .WithName("DeleteWeddingWebsite")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
+            .RequireModuleAccess(WeddingModule.Website)
             .Produces(204)
             .Produces<ErrorResponse>(401)
             .Produces<ErrorResponse>(403)

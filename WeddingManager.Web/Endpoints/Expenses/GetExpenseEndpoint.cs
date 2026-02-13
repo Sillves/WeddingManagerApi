@@ -1,4 +1,5 @@
 using WeddingManager.Domain.DTO;
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
@@ -17,6 +18,7 @@ public class GetExpenseEndpoint : IEndpoint
                 return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
             })
             .AddEndpointFilter<RequireExpenseAccessFilter>()
+            .RequireModuleAccess(WeddingModule.Expenses)
             .WithTags("Expenses")
             .WithName("GetExpense")
             .RequireAuthorization()

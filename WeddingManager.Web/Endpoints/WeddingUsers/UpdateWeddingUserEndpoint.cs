@@ -20,6 +20,7 @@ public class UpdateWeddingUserEndpoint : IEndpoint
             .WithName("UpdateWeddingUser")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
+            .RequireOwnerAccess()
             .Produces<WeddingUserDto>(200)
             .Produces<ErrorResponse>(400)
             .Produces<ErrorResponse>(401)

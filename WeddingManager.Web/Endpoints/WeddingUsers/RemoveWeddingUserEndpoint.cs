@@ -19,6 +19,7 @@ public class RemoveWeddingUserEndpoint : IEndpoint
             .WithName("RemoveWeddingUser")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
+            .RequireOwnerAccess()
             .Produces(204)
             .Produces<ErrorResponse>(401)
             .Produces<ErrorResponse>(403)

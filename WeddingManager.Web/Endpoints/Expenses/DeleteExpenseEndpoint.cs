@@ -1,3 +1,4 @@
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Web.Authorization;
 using WeddingManager.Web.Extensions;
@@ -16,6 +17,7 @@ public class DeleteExpenseEndpoint : IEndpoint
                 return result.IsSuccess ? Results.NoContent() : result.ToErrorResult();
             })
             .AddEndpointFilter<RequireExpenseAccessFilter>()
+            .RequireModuleAccess(WeddingModule.Expenses)
             .WithTags("Expenses")
             .WithName("DeleteExpense")
             .RequireAuthorization()

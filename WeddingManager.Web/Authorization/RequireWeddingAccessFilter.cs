@@ -4,6 +4,7 @@ namespace WeddingManager.Web.Authorization;
 
 public class RequireWeddingAccessFilter(
     IWeddingRepository weddingRepository,
+    IWeddingUserRepository weddingUserRepository,
     IUserContextService userContextService) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(
@@ -23,12 +24,14 @@ public class RequireWeddingAccessFilter(
         }
 
         var userId = userContextService.GetUserId();
-        if (wedding.UserId != userId)
+        var weddingUser = await weddingUserRepository.GetByIdAsync(weddingId, userId);
+        if (weddingUser == null)
         {
             return Results.Forbid();
         }
 
         context.HttpContext.Items["Wedding"] = wedding;
+        context.HttpContext.Items["WeddingUser"] = weddingUser;
         return await next(context);
     }
 }

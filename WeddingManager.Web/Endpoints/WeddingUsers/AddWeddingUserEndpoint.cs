@@ -26,6 +26,7 @@ public class AddWeddingUserEndpoint : IEndpoint
             .WithName("AddWeddingUser")
             .RequireAuthorization()
             .AddEndpointFilter<RequireWeddingAccessFilter>()
+            .RequireOwnerAccess()
             .Produces<WeddingUserDto>(201)
             .Produces<ErrorResponse>(400)
             .Produces<ErrorResponse>(401)
