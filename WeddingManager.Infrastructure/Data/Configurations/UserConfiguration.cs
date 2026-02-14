@@ -14,5 +14,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(e => e.SubscriptionTier).HasDefaultValue(SubscriptionTier.Free);
         builder.Property(e => e.StripeCustomerId).HasMaxLength(255);
         builder.Property(e => e.StripeSubscriptionId).HasMaxLength(255);
+        builder.Property(u => u.ReferralCode).HasMaxLength(100);
+        builder.HasIndex(u => u.ReferralCode).IsUnique().HasFilter("\"ReferralCode\" IS NOT NULL");
     }
 }

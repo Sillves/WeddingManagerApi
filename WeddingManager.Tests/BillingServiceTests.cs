@@ -112,12 +112,14 @@ public class BillingServiceTests
         userContextMock.Setup(c => c.GetUserId()).Returns(Guid.NewGuid());
         stripeSettings ??= CreateStripeSettings();
         subscriptionPlanOptions ??= CreatePlanOptions();
+        var referralServiceMock = new Mock<IReferralService>();
         var logger = new Mock<ILogger<BillingService>>();
         return new BillingService(
             userManagerMock.Object,
             userContextMock.Object,
             stripeSettings,
             subscriptionPlanOptions,
+            referralServiceMock.Object,
             logger.Object);
     }
 

@@ -11,6 +11,7 @@ public class User : IdentityUser<Guid>
     public SubscriptionTier SubscriptionTier { get; set; } = SubscriptionTier.Free;
     public string? StripeCustomerId { get; set; }
     public string? StripeSubscriptionId { get; set; }
+    public string? ReferralCode { get; set; }
 
     public ICollection<Wedding> Weddings { get; set; } = null!;
     public ICollection<WeddingUser> WeddingUsers { get; set; } = null!;

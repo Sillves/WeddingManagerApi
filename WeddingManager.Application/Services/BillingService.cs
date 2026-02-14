@@ -25,6 +25,7 @@ public class BillingService(
     IUserContextService userContextService,
     IOptions<StripeSettings> stripeOptions,
     IOptions<SubscriptionPlanOptions> subscriptionPlanOptions,
+    IReferralService referralService,
     ILogger<BillingService> logger) : IBillingService
 {
     private readonly StripeSettings _stripeSettings = stripeOptions.Value;
@@ -218,7 +219,13 @@ public class BillingService(
 
         var tier = GetTierFromMetadata(session.Metadata);
         if (tier != null)
-            return await UpdateUserTierAsync(user, tier.Value, session.CustomerId);
+        {
+            var updateResult = await UpdateUserTierAsync(user, tier.Value, session.CustomerId);
+            // Track referral conversion on successful payment
+            if (updateResult.IsSuccess)
+                await referralService.TrackReferralConversionAsync(user.Id);
+            return updateResult;
+        }
 
         logger.LogWarning("Stripe checkout session completed but tier could not be resolved. SessionId: {SessionId}", session.Id);
         return Result.Ok();

@@ -17,11 +17,12 @@ public class AuthService(
     IOptions<JwtSettings> jwtOptions,
     IOptions<FrontendSettings> frontendSettings,
     IEmailService emailService,
+    IReferralService referralService,
     ILogger<AuthService> logger) : IAuthService
 {
     private readonly FrontendSettings _frontendSettings = frontendSettings.Value;
 
-    public async Task<Result<AuthResult>> RegisterAsync(string email, string firstName, string lastName, string password)
+    public async Task<Result<AuthResult>> RegisterAsync(string email, string firstName, string lastName, string password, string? referralCode = null)
     {
         var user = new User
         {
@@ -37,6 +38,12 @@ public class AuthService(
         {
             var error = result.Errors.FirstOrDefault()?.Description ?? "Registration failed";
             return Result<AuthResult>.Fail(new Error(ErrorCodes.Validation, error));
+        }
+
+        // Track referral if code provided
+        if (!string.IsNullOrEmpty(referralCode))
+        {
+            await referralService.TrackReferralRegistrationAsync(referralCode, user.Id);
         }
 
         var token = GenerateJwtToken(user);

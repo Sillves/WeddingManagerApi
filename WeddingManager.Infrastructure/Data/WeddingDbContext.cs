@@ -21,6 +21,8 @@ public class WeddingDbContext(DbContextOptions<WeddingDbContext> options)
     public DbSet<WeddingBudget> WeddingBudgets => Set<WeddingBudget>();
     public DbSet<BudgetAllocation> BudgetAllocations => Set<BudgetAllocation>();
     public DbSet<WeddingInvitation> WeddingInvitations => Set<WeddingInvitation>();
+    public DbSet<Referral> Referrals => Set<Referral>();
+    public DbSet<ReferralPayout> ReferralPayouts => Set<ReferralPayout>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

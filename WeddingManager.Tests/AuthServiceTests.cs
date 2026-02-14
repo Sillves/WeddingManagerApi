@@ -123,8 +123,9 @@ public class AuthServiceTests
         var jwtOptions = Options.Create(jwtSettings);
         var frontendOptions = Options.Create(frontendSettings);
         emailServiceMock ??= new Mock<IEmailService>();
+        var referralServiceMock = new Mock<IReferralService>();
         var logger = new Mock<ILogger<AuthService>>();
-        return new AuthService(userManagerMock.Object, jwtOptions, frontendOptions, emailServiceMock.Object, logger.Object);
+        return new AuthService(userManagerMock.Object, jwtOptions, frontendOptions, emailServiceMock.Object, referralServiceMock.Object, logger.Object);
     }
 
     [Fact]
