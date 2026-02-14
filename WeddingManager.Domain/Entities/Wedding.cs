@@ -7,7 +7,8 @@ public class Wedding
     public string Slug { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string Location { get; set; } = string.Empty;
-    
+    public bool IsPersonal { get; set; } = true;
+
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;
     

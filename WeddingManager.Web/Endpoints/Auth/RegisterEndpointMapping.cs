@@ -19,6 +19,7 @@ public class RegisterEndpoint : IEndpoint
                 request.FirstName,
                 request.LastName,
                 request.Password,
+                request.AccountType,
                 referralCode);
 
             if (!result.IsSuccess)

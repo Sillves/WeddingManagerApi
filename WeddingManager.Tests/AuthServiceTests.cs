@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using WeddingManager.Application.Services;
 using WeddingManager.Domain.Entities;
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
 using WeddingManager.Domain.Utils;
@@ -22,7 +23,7 @@ public class AuthServiceTests
             .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Registration failed" }));
         var service = CreateService(userManagerMock);
 
-        var result = await service.RegisterAsync("fail@example.com", "Fail", "User", "P@ssword1!");
+        var result = await service.RegisterAsync("fail@example.com", "Fail", "User", "P@ssword1!", AccountType.Couple);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCodes.Validation, result.Errors[0].Code);
@@ -39,7 +40,7 @@ public class AuthServiceTests
             .ReturnsAsync(IdentityResult.Success);
         var service = CreateService(userManagerMock);
 
-        var result = await service.RegisterAsync("test@example.com", "Test", "User", "P@ssword1!");
+        var result = await service.RegisterAsync("test@example.com", "Test", "User", "P@ssword1!", AccountType.Couple);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
@@ -323,5 +324,6 @@ public class AuthServiceTests
         Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.Email && c.Value == user.Email);
         Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.GivenName && c.Value == user.FirstName);
         Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.FamilyName && c.Value == user.LastName);
+        Assert.Contains(jwt.Claims, c => c.Type == "account_type" && c.Value == ((int)user.AccountType).ToString());
     }
 }

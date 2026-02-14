@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using WeddingManager.Domain.Entities;
+using WeddingManager.Domain.Enums;
 using WeddingManager.Domain.Interfaces;
 using WeddingManager.Domain.Models;
 using WeddingManager.Domain.Utils;
@@ -22,14 +23,15 @@ public class AuthService(
 {
     private readonly FrontendSettings _frontendSettings = frontendSettings.Value;
 
-    public async Task<Result<AuthResult>> RegisterAsync(string email, string firstName, string lastName, string password, string? referralCode = null)
+    public async Task<Result<AuthResult>> RegisterAsync(string email, string firstName, string lastName, string password, AccountType accountType, string? referralCode = null)
     {
         var user = new User
         {
             Email = email,
             UserName = email,
             FirstName = firstName,
-            LastName = lastName
+            LastName = lastName,
+            AccountType = accountType
         };
 
         var result = await userManager.CreateAsync(user, password);
@@ -171,7 +173,8 @@ public class AuthService(
             new(JwtRegisteredClaimNames.Email, user.Email!),
             new(JwtRegisteredClaimNames.GivenName, user.FirstName),
             new(JwtRegisteredClaimNames.FamilyName, user.LastName),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("account_type", ((int)user.AccountType).ToString())
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key));

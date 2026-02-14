@@ -7,4 +7,5 @@ public record UserProfileDto(
     string Email,
     string FirstName,
     string LastName,
-    SubscriptionTier SubscriptionTier);
+    SubscriptionTier SubscriptionTier,
+    AccountType AccountType);

@@ -27,7 +27,8 @@ public class GetCurrentUserEndpoint : IEndpoint
                     user.Email ?? string.Empty,
                     user.FirstName,
                     user.LastName,
-                    user.SubscriptionTier);
+                    user.SubscriptionTier,
+                    user.AccountType);
 
                 return Results.Ok(profile);
             })
