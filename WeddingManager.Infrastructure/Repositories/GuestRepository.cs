@@ -35,6 +35,19 @@ public class GuestRepository(WeddingDbContext context) : IGuestRepository
             .FirstOrDefaultAsync(g => g.WeddingId == weddingId && g.Email == email);
     }
 
+    public async Task<Guest?> FindByDedupeKeyAsync(Guid weddingId, string email, string name, string? surname)
+    {
+        var emailLower = email.ToLower();
+        var nameLower = name.ToLower();
+        var surnameLower = (surname ?? string.Empty).ToLower();
+        return await context.Guests
+            .FirstOrDefaultAsync(g =>
+                g.WeddingId == weddingId &&
+                g.Email.ToLower() == emailLower &&
+                g.Name.ToLower() == nameLower &&
+                (g.Surname ?? string.Empty).ToLower() == surnameLower);
+    }
+
     public async Task<int> CountByWeddingIdAsync(Guid weddingId)
     {
         return await context.Guests.CountAsync(g => g.WeddingId == weddingId);
