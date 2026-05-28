@@ -36,7 +36,9 @@ public static class RsvpSubmissionValidation
                 errors.Add(new Error(ErrorCodes.Validation, "Plus-one name is required when bringing a plus-one"));
         }
 
-        ValidateCustomAnswers(flow, dto, errors);
+        // A guest who declines answers no custom questions.
+        if (dto.Status == RsvpResponseStatus.Attending)
+            ValidateCustomAnswers(flow, dto, errors);
 
         return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();
     }
