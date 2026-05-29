@@ -431,7 +431,7 @@ public class WeddingWebsiteServiceTests
         var websiteRepoMock = new Mock<IWeddingWebsiteRepository>();
         websiteRepoMock.Setup(r => r.GetPublishedBySlugAsync("test-wedding")).ReturnsAsync(website);
         var eventRepoMock = new Mock<IEventRepository>();
-        eventRepoMock.Setup(r => r.GetByWeddingIdAsync(weddingId)).ReturnsAsync(events);
+        eventRepoMock.Setup(r => r.GetByWeddingIdForPublicAsync(weddingId)).ReturnsAsync(events);
         var service = CreateService(websiteRepoMock, eventRepoMock: eventRepoMock);
 
         var result = await service.GetPublicBySlugAsync("test-wedding");
@@ -455,7 +455,7 @@ public class WeddingWebsiteServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value!.Events);
-        eventRepoMock.Verify(r => r.GetByWeddingIdAsync(It.IsAny<Guid>()), Times.Never);
+        eventRepoMock.Verify(r => r.GetByWeddingIdForPublicAsync(It.IsAny<Guid>()), Times.Never);
     }
 
     // --- DeleteAsync ---
