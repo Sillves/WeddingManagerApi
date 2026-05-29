@@ -166,7 +166,7 @@ public class WeddingWebsiteService(
             eventsSection.TryGetProperty("showFromWeddingEvents", out var showEvents) &&
             showEvents.GetBoolean())
         {
-            var events = await eventRepository.GetByWeddingIdAsync(website.WeddingId);
+            var events = await eventRepository.GetByWeddingIdForPublicAsync(website.WeddingId);
             dto.Events = events.Select(e => mapper.EventToDto(e)).ToList();
         }
 

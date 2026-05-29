@@ -228,6 +228,16 @@ public class EventRepository(WeddingDbContext context, IUserContextService userC
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Event>> GetByWeddingIdForPublicAsync(Guid weddingId)
+    {
+        return await context.Events
+            .AsNoTracking()
+            .Include(e => e.Guests)
+            .Where(e => e.WeddingId == weddingId)
+            .OrderBy(e => e.StartDate)
+            .ToListAsync();
+    }
+
     private async Task<EventGuestChangeResult> RemoveGuestInternalAsync(Guid eventId, Guid guestId)
     {
         var eventToUpdate = await context.Events
