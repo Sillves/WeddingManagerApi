@@ -10,7 +10,9 @@ public class GuestConfiguration : IEntityTypeConfiguration<Guest>
     {
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Name).IsRequired().HasMaxLength(255);
+        builder.Property(e => e.Surname).HasMaxLength(255);
         builder.Property(e => e.Email).IsRequired().HasMaxLength(255);
+        builder.Property(e => e.Dietary);
         builder.Property(e => e.PreferredLanguage)
             .IsRequired()
             .HasMaxLength(10)
@@ -21,8 +23,10 @@ public class GuestConfiguration : IEntityTypeConfiguration<Guest>
             .IsRequired()
             .HasMaxLength(50)
             .HasConversion<string>();
-        
-        builder.HasIndex(e => new { e.WeddingId, e.Email }).IsUnique();
+
+        // Composite dedupe key is case-insensitive on email/name/surname; created as a
+        // functional unique index via raw SQL in the migration (lower(...) can't be
+        // expressed through the fluent API). The old (WeddingId, Email) index is dropped there.
         builder.HasIndex(e => e.WeddingId);
         builder.HasIndex(e => e.InvitationToken).IsUnique();
 
@@ -30,5 +34,10 @@ public class GuestConfiguration : IEntityTypeConfiguration<Guest>
             .WithMany(w => w.Guests)
             .HasForeignKey(g => g.WeddingId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(g => g.PlusOneOf)
+            .WithMany()
+            .HasForeignKey(g => g.PlusOneOfGuestId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

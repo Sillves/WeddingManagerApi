@@ -23,6 +23,8 @@ public class WeddingDbContext(DbContextOptions<WeddingDbContext> options)
     public DbSet<WeddingInvitation> WeddingInvitations => Set<WeddingInvitation>();
     public DbSet<Referral> Referrals => Set<Referral>();
     public DbSet<ReferralPayout> ReferralPayouts => Set<ReferralPayout>();
+    public DbSet<InvitationFlow> InvitationFlows => Set<InvitationFlow>();
+    public DbSet<RsvpResponse> RsvpResponses => Set<RsvpResponse>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

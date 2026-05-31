@@ -65,6 +65,8 @@ public static class DependencyInjection
         services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IWeddingInvitationRepository, WeddingInvitationRepository>();
         services.AddScoped<IReferralRepository, ReferralRepository>();
+        services.AddScoped<IInvitationFlowRepository, InvitationFlowRepository>();
+        services.AddScoped<IRsvpResponseRepository, RsvpResponseRepository>();
         services.AddScoped<IMediaService, MediaService>();
 
         services.AddScoped<IObjectStorageService, ScalewayObjectStorageService>();

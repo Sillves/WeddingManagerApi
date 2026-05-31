@@ -26,6 +26,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
+builder.Services.AddDataProtection();
 builder.Services.AddPublicRateLimiting();
 
 var app = builder.Build();

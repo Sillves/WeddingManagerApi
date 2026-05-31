@@ -136,4 +136,23 @@ public partial class ApplicationMapper
     // Media mappings
     [MapProperty(nameof(Media.S3Url), nameof(MediaUploadResponseDto.Url))]
     public partial MediaUploadResponseDto MediaToDto(Media media);
+
+    // Invitation flow mappings - manual to carry response count and typed jsonb collections
+    public InvitationFlowDto InvitationFlowToDto(InvitationFlow flow, int responseCount)
+    {
+        return new InvitationFlowDto
+        {
+            Id = flow.Id,
+            WeddingId = flow.WeddingId,
+            Name = flow.Name,
+            Passcode = flow.Passcode,
+            IncludePlusOne = flow.IncludePlusOne,
+            CustomQuestions = flow.CustomQuestions,
+            EventIds = flow.EventIds,
+            CustomEvents = flow.CustomEvents,
+            ResponseCount = responseCount,
+            CreatedAt = flow.CreatedAt,
+            UpdatedAt = flow.UpdatedAt
+        };
+    }
 }
