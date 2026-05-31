@@ -140,7 +140,7 @@ public class InvitationFlowService(
         if (eventIds.Count == 0)
             return Result.Ok();
 
-        var weddingEventIds = (await eventRepository.GetByWeddingIdUnscopedAsync(weddingId))
+        var weddingEventIds = (await eventRepository.GetByWeddingIdForPublicAsync(weddingId))
             .Select(e => e.Id)
             .ToHashSet();
 

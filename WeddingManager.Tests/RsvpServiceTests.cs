@@ -211,7 +211,7 @@ public class RsvpServiceTests
         {
             WeddingRepo.Setup(r => r.GetByIdOrSlugAsync(It.IsAny<string>()))
                 .ReturnsAsync(new Wedding { Id = WeddingId, Title = "Test", Slug = "slug" });
-            EventRepo.Setup(r => r.GetByWeddingIdUnscopedAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Event>());
+            EventRepo.Setup(r => r.GetByWeddingIdForPublicAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Event>());
             Service = new RsvpService(WeddingRepo.Object, FlowRepo.Object, ResponseRepo.Object,
                 GuestRepo.Object, EventRepo.Object);
         }

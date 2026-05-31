@@ -18,7 +18,5 @@ public interface IEventRepository
     Task<EventGuestChangeResult> RemoveGuestFromEventAsync(Guid eventId, Guid guestId);
     Task<EventGuestBatchRemoveResultDto> RemoveGuestsFromEventAsync(Guid eventId, IReadOnlyCollection<Guid> guestIds);
     Task<IEnumerable<Event>> GetByWeddingIdAsync(Guid weddingId);
-
-    /// <summary>Events for a wedding without current-user scoping (for public RSVP rendering).</summary>
-    Task<IEnumerable<Event>> GetByWeddingIdUnscopedAsync(Guid weddingId);
+    Task<IEnumerable<Event>> GetByWeddingIdForPublicAsync(Guid weddingId);
 }

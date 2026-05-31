@@ -163,7 +163,7 @@ public class RsvpService(
     public async Task<Result<IEnumerable<RsvpResponseDto>>> GetResponsesAsync(Guid weddingId, Guid? flowId)
     {
         var responses = (await responseRepository.GetByWeddingIdAsync(weddingId, flowId)).ToList();
-        var events = (await eventRepository.GetByWeddingIdUnscopedAsync(weddingId)).ToList();
+        var events = (await eventRepository.GetByWeddingIdForPublicAsync(weddingId)).ToList();
         var flows = (await flowRepository.GetByWeddingIdAsync(weddingId)).ToList();
 
         var eventNames = events.ToDictionary(e => e.Id, e => e.Name);
@@ -204,7 +204,7 @@ public class RsvpService(
 
     private async Task<HashSet<Guid>> GetValidEventIdsAsync(Guid weddingId, InvitationFlow flow)
     {
-        var realEventIds = (await eventRepository.GetByWeddingIdUnscopedAsync(weddingId))
+        var realEventIds = (await eventRepository.GetByWeddingIdForPublicAsync(weddingId))
             .Select(e => e.Id)
             .ToHashSet();
         var valid = flow.EventIds.Where(realEventIds.Contains).ToHashSet();
@@ -215,7 +215,7 @@ public class RsvpService(
 
     private async Task<RsvpFlowPublicDto> BuildPublicFlowAsync(Guid weddingId, InvitationFlow flow)
     {
-        var realEvents = (await eventRepository.GetByWeddingIdUnscopedAsync(weddingId))
+        var realEvents = (await eventRepository.GetByWeddingIdForPublicAsync(weddingId))
             .Where(e => flow.EventIds.Contains(e.Id))
             .Select(e => new RsvpEventOptionDto
             {

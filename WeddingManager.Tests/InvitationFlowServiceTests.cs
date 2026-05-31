@@ -117,7 +117,7 @@ public class InvitationFlowServiceTests
         var flowRepo = new Mock<IInvitationFlowRepository>();
         flowRepo.Setup(r => r.GetByWeddingIdAsync(weddingId)).ReturnsAsync(new List<InvitationFlow>());
         var eventRepo = new Mock<IEventRepository>();
-        eventRepo.Setup(r => r.GetByWeddingIdUnscopedAsync(weddingId)).ReturnsAsync(new List<Event>());
+        eventRepo.Setup(r => r.GetByWeddingIdForPublicAsync(weddingId)).ReturnsAsync(new List<Event>());
         var service = CreateService(flowRepo, eventRepo: eventRepo);
 
         var request = new CreateInvitationFlowRequestDto { Name = "Flow", EventIds = [Guid.NewGuid()] };
@@ -189,7 +189,7 @@ public class InvitationFlowServiceTests
         responseRepo.Setup(r => r.GetCountsByWeddingAsync(It.IsAny<Guid>()))
             .ReturnsAsync(new Dictionary<Guid, int>());
         eventRepo ??= new Mock<IEventRepository>();
-        eventRepo.Setup(r => r.GetByWeddingIdUnscopedAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Event>());
+        eventRepo.Setup(r => r.GetByWeddingIdForPublicAsync(It.IsAny<Guid>())).ReturnsAsync(new List<Event>());
         return new InvitationFlowService(flowRepo.Object, responseRepo.Object, eventRepo.Object, _mapper);
     }
 }
