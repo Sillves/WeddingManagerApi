@@ -207,6 +207,12 @@ jobs:
             docker-compose up -d
             sleep 5
 
+            # Reclaim disk: drop dangling images (orphaned by the new :latest pull)
+            # and stopped containers. Running containers, tagged images, and volumes
+            # are untouched.
+            docker image prune -f || true
+            docker container prune -f || true
+
       - name: Notify deployment
         if: success()
         run: echo "Deployment successful!"
