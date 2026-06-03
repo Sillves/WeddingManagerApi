@@ -4,5 +4,6 @@ public enum WebsiteTemplate
 {
     ElegantClassic = 0,
     ModernMinimal = 1,
-    RomanticGarden = 2
+    RomanticGarden = 2,
+    MinimalArchitecture = 3
 }

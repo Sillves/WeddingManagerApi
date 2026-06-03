@@ -286,6 +286,12 @@ public class WeddingWebsiteService(
                 ["fontFamily"] = "script",
                 ["floralStyle"] = "watercolor"
             },
+            WebsiteTemplate.MinimalArchitecture => new Dictionary<string, string>
+            {
+                ["primaryColor"] = "#1A1A1A",
+                ["accentColor"] = "#8E9794",
+                ["fontFamily"] = "serif"
+            },
             _ => new Dictionary<string, string>
             {
                 ["primaryColor"] = "#8B7355",

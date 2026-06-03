@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using WeddingManager.Application.Extensions;
+using WeddingManager.Infrastructure.Data;
 using WeddingManager.Infrastructure.Extensions;
 using WeddingManager.Web.Endpoints;
 using WeddingManager.Web.Extensions;
@@ -30,6 +32,16 @@ builder.Services.AddDataProtection();
 builder.Services.AddPublicRateLimiting();
 
 var app = builder.Build();
+
+// Auto-apply EF Core migrations in Development so the containerised API is
+// self-sufficient (no host-side `dotnet ef` step needed). Production is
+// unaffected and keeps using the explicit migration scripts.
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<WeddingDbContext>();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
