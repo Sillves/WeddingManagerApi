@@ -12,6 +12,7 @@ public class WeddingWebsiteService(
     IWeddingWebsiteRepository websiteRepository,
     IWeddingRepository weddingRepository,
     IEventRepository eventRepository,
+    IInvitationFlowRepository flowRepository,
     ApplicationMapper mapper) : IWeddingWebsiteService
 {
     public async Task<Result<WeddingWebsiteDto>> GetByWeddingIdAsync(Guid weddingId)
@@ -139,14 +140,45 @@ public class WeddingWebsiteService(
         return Result<WeddingWebsiteDto>.Ok(mapper.WebsiteToDto(updatedWebsite!));
     }
 
-    public async Task<Result<PublicWeddingWebsiteDto>> GetPublicBySlugAsync(string slug)
+    public async Task<Result<PublicWebsiteStateDto>> GetPublicBySlugAsync(string slug, Guid? unlockedFlowId)
     {
         var website = await websiteRepository.GetPublishedBySlugAsync(slug);
         if (website == null)
         {
-            return Result<PublicWeddingWebsiteDto>.Fail(new Error(ErrorCodes.NotFound, "Website not found or not published"));
+            return Result<PublicWebsiteStateDto>.Fail(new Error(ErrorCodes.NotFound, "Website not found or not published"));
         }
 
+        // Resolve which flow (if any) personalises this visit, and whether a passcode is still required.
+        var flows = (await flowRepository.GetByWeddingIdAsync(website.WeddingId)).ToList();
+        InvitationFlow? activeFlow = null;
+        if (flows.Count > 0)
+        {
+            var openFlow = flows.FirstOrDefault(f => f.Passcode == null);
+            if (openFlow != null)
+            {
+                // Open flow: no code needed, but events still follow the flow.
+                activeFlow = openFlow;
+            }
+            else
+            {
+                // Passcode-protected flows: require a valid unlocked flow belonging to this wedding.
+                activeFlow = unlockedFlowId == null
+                    ? null
+                    : flows.FirstOrDefault(f => f.Id == unlockedFlowId.Value);
+
+                if (activeFlow == null)
+                {
+                    return Result<PublicWebsiteStateDto>.Ok(new PublicWebsiteStateDto { RequiresPasscode = true });
+                }
+            }
+        }
+
+        var dto = await BuildPublicWebsiteDtoAsync(website, activeFlow);
+        return Result<PublicWebsiteStateDto>.Ok(new PublicWebsiteStateDto { RequiresPasscode = false, Website = dto });
+    }
+
+    private async Task<PublicWeddingWebsiteDto> BuildPublicWebsiteDtoAsync(WeddingWebsite website, InvitationFlow? activeFlow)
+    {
         var dto = new PublicWeddingWebsiteDto
         {
             WeddingSlug = website.Wedding.Slug,
@@ -158,7 +190,7 @@ public class WeddingWebsiteService(
             Content = JsonDocument.Parse(website.Content)
         };
 
-        // Include events if the events section is enabled
+        // Include events if the events section is enabled, filtered to the active flow when present.
         var content = JsonDocument.Parse(website.Content);
         if (content.RootElement.TryGetProperty("events", out var eventsSection) &&
             eventsSection.TryGetProperty("enabled", out var enabled) &&
@@ -166,11 +198,15 @@ public class WeddingWebsiteService(
             eventsSection.TryGetProperty("showFromWeddingEvents", out var showEvents) &&
             showEvents.GetBoolean())
         {
-            var events = await eventRepository.GetByWeddingIdForPublicAsync(website.WeddingId);
+            IEnumerable<Event> events = await eventRepository.GetByWeddingIdForPublicAsync(website.WeddingId);
+            if (activeFlow != null)
+            {
+                events = events.Where(e => activeFlow.EventIds.Contains(e.Id));
+            }
             dto.Events = events.Select(e => mapper.EventToDto(e)).ToList();
         }
 
-        return Result<PublicWeddingWebsiteDto>.Ok(dto);
+        return dto;
     }
 
     public async Task<Result> DeleteAsync(Guid weddingId)

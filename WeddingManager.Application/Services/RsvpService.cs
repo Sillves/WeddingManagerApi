@@ -14,7 +14,7 @@ public class RsvpService(
     IGuestRepository guestRepository,
     IEventRepository eventRepository) : IRsvpService
 {
-    public async Task<Result<RsvpFlowStateDto>> GetFlowStateAsync(string weddingSlugOrId)
+    public async Task<Result<RsvpFlowStateDto>> GetFlowStateAsync(string weddingSlugOrId, Guid? unlockedFlowId)
     {
         var wedding = await weddingRepository.GetByIdOrSlugAsync(weddingSlugOrId);
         if (wedding == null)
@@ -34,6 +34,23 @@ public class RsvpService(
                 RequiresPasscode = false,
                 Flow = dto
             });
+        }
+
+        // Already unlocked (e.g. via the website gate): the signed cookie names a flow of this
+        // wedding, so hand back the form directly instead of asking for the code again.
+        if (unlockedFlowId != null)
+        {
+            var unlockedFlow = flows.FirstOrDefault(f => f.Id == unlockedFlowId.Value);
+            if (unlockedFlow != null)
+            {
+                var dto = await BuildPublicFlowAsync(wedding.Id, unlockedFlow);
+                return Result<RsvpFlowStateDto>.Ok(new RsvpFlowStateDto
+                {
+                    HasFlows = true,
+                    RequiresPasscode = false,
+                    Flow = dto
+                });
+            }
         }
 
         return Result<RsvpFlowStateDto>.Ok(new RsvpFlowStateDto

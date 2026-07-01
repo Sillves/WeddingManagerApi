@@ -13,7 +13,8 @@ public class GetRsvpFlowStateEndpoint : IEndpoint
         app.MapGet("/public/weddings/{slug}/rsvp",
                 async (string slug, HttpContext http, IRsvpService rsvpService, IDataProtectionProvider dp) =>
                 {
-                    var result = await rsvpService.GetFlowStateAsync(slug);
+                    var unlockedFlowId = RsvpFlowCookie.ResolveFlowId(http, dp);
+                    var result = await rsvpService.GetFlowStateAsync(slug, unlockedFlowId);
                     if (!result.IsSuccess)
                     {
                         return result.ToErrorResult();
