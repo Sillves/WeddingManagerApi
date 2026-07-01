@@ -17,15 +17,23 @@ public class WeddingWebsiteServiceTests
     private WeddingWebsiteService CreateService(
         Mock<IWeddingWebsiteRepository>? websiteRepoMock = null,
         Mock<IWeddingRepository>? weddingRepoMock = null,
-        Mock<IEventRepository>? eventRepoMock = null)
+        Mock<IEventRepository>? eventRepoMock = null,
+        Mock<IInvitationFlowRepository>? flowRepoMock = null)
     {
         websiteRepoMock ??= new Mock<IWeddingWebsiteRepository>();
         weddingRepoMock ??= new Mock<IWeddingRepository>();
         eventRepoMock ??= new Mock<IEventRepository>();
+        if (flowRepoMock == null)
+        {
+            flowRepoMock = new Mock<IInvitationFlowRepository>();
+            flowRepoMock.Setup(r => r.GetByWeddingIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(new List<InvitationFlow>());
+        }
         return new WeddingWebsiteService(
             websiteRepoMock.Object,
             weddingRepoMock.Object,
             eventRepoMock.Object,
+            flowRepoMock.Object,
             _mapper);
     }
 
@@ -396,12 +404,13 @@ public class WeddingWebsiteServiceTests
         repoMock.Setup(r => r.GetPublishedBySlugAsync("test-wedding")).ReturnsAsync(website);
         var service = CreateService(websiteRepoMock: repoMock);
 
-        var result = await service.GetPublicBySlugAsync("test-wedding");
+        var result = await service.GetPublicBySlugAsync("test-wedding", null);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal("test-wedding", result.Value!.WeddingSlug);
-        Assert.Equal("Test Wedding", result.Value.CoupleNames);
-        Assert.Equal(website.Wedding.Location, result.Value.WeddingLocation);
+        Assert.False(result.Value!.RequiresPasscode);
+        Assert.Equal("test-wedding", result.Value.Website!.WeddingSlug);
+        Assert.Equal("Test Wedding", result.Value.Website.CoupleNames);
+        Assert.Equal(website.Wedding.Location, result.Value.Website.WeddingLocation);
     }
 
     [Fact]
@@ -411,7 +420,7 @@ public class WeddingWebsiteServiceTests
         repoMock.Setup(r => r.GetPublishedBySlugAsync("ghost")).ReturnsAsync((WeddingWebsite?)null);
         var service = CreateService(websiteRepoMock: repoMock);
 
-        var result = await service.GetPublicBySlugAsync("ghost");
+        var result = await service.GetPublicBySlugAsync("ghost", null);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCodes.NotFound, result.Errors[0].Code);
@@ -434,11 +443,41 @@ public class WeddingWebsiteServiceTests
         eventRepoMock.Setup(r => r.GetByWeddingIdForPublicAsync(weddingId)).ReturnsAsync(events);
         var service = CreateService(websiteRepoMock, eventRepoMock: eventRepoMock);
 
-        var result = await service.GetPublicBySlugAsync("test-wedding");
+        var result = await service.GetPublicBySlugAsync("test-wedding", null);
 
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value!.Events);
-        Assert.Equal(2, result.Value.Events!.Count);
+        Assert.NotNull(result.Value!.Website!.Events);
+        Assert.Equal(2, result.Value.Website.Events!.Count);
+    }
+
+    [Fact]
+    public async Task GetPublicBySlugAsync_NeverExposesGuestList()
+    {
+        var weddingId = Guid.NewGuid();
+        var content = """{"events":{"enabled":true,"showFromWeddingEvents":true}}""";
+        var website = CreateWebsiteEntity(weddingId, isPublished: true, content: content);
+        var events = new List<Event>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(), WeddingId = weddingId, Name = "Ceremony", Location = "Church", StartDate = DateTime.UtcNow,
+                Guests = new List<Guest>
+                {
+                    new() { Id = Guid.NewGuid(), Name = "Jane", Surname = "Doe", Email = "jane@x.com" }
+                }
+            }
+        };
+        var websiteRepoMock = new Mock<IWeddingWebsiteRepository>();
+        websiteRepoMock.Setup(r => r.GetPublishedBySlugAsync("test-wedding")).ReturnsAsync(website);
+        var eventRepoMock = new Mock<IEventRepository>();
+        eventRepoMock.Setup(r => r.GetByWeddingIdForPublicAsync(weddingId)).ReturnsAsync(events);
+        var service = CreateService(websiteRepoMock, eventRepoMock: eventRepoMock);
+
+        var result = await service.GetPublicBySlugAsync("test-wedding", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value!.Website!.Events);
+        Assert.All(result.Value.Website.Events!, e => Assert.Empty(e.GuestDtos));
     }
 
     [Fact]
@@ -451,11 +490,119 @@ public class WeddingWebsiteServiceTests
         var eventRepoMock = new Mock<IEventRepository>();
         var service = CreateService(websiteRepoMock, eventRepoMock: eventRepoMock);
 
-        var result = await service.GetPublicBySlugAsync("test-wedding");
+        var result = await service.GetPublicBySlugAsync("test-wedding", null);
 
         Assert.True(result.IsSuccess);
-        Assert.Null(result.Value!.Events);
+        Assert.Null(result.Value!.Website!.Events);
         eventRepoMock.Verify(r => r.GetByWeddingIdForPublicAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetPublicBySlugAsync_RequiresPasscode_WhenPasscodeFlowsAndNoUnlock()
+    {
+        var weddingId = Guid.NewGuid();
+        var website = CreateWebsiteEntity(weddingId, isPublished: true);
+        var websiteRepoMock = new Mock<IWeddingWebsiteRepository>();
+        websiteRepoMock.Setup(r => r.GetPublishedBySlugAsync("test-wedding")).ReturnsAsync(website);
+        var flowRepoMock = new Mock<IInvitationFlowRepository>();
+        flowRepoMock.Setup(r => r.GetByWeddingIdAsync(weddingId)).ReturnsAsync(new List<InvitationFlow>
+        {
+            new() { Id = Guid.NewGuid(), WeddingId = weddingId, Name = "Family", Passcode = "secret" }
+        });
+        var service = CreateService(websiteRepoMock, flowRepoMock: flowRepoMock);
+
+        var result = await service.GetPublicBySlugAsync("test-wedding", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.RequiresPasscode);
+        Assert.Null(result.Value.Website);
+    }
+
+    [Fact]
+    public async Task GetPublicBySlugAsync_RequiresPasscode_WhenUnlockedFlowNotOfThisWedding()
+    {
+        var weddingId = Guid.NewGuid();
+        var website = CreateWebsiteEntity(weddingId, isPublished: true);
+        var websiteRepoMock = new Mock<IWeddingWebsiteRepository>();
+        websiteRepoMock.Setup(r => r.GetPublishedBySlugAsync("test-wedding")).ReturnsAsync(website);
+        var flowRepoMock = new Mock<IInvitationFlowRepository>();
+        flowRepoMock.Setup(r => r.GetByWeddingIdAsync(weddingId)).ReturnsAsync(new List<InvitationFlow>
+        {
+            new() { Id = Guid.NewGuid(), WeddingId = weddingId, Name = "Family", Passcode = "secret" }
+        });
+        var service = CreateService(websiteRepoMock, flowRepoMock: flowRepoMock);
+
+        var result = await service.GetPublicBySlugAsync("test-wedding", Guid.NewGuid());
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.RequiresPasscode);
+        Assert.Null(result.Value.Website);
+    }
+
+    [Fact]
+    public async Task GetPublicBySlugAsync_FiltersEventsToUnlockedFlow()
+    {
+        var weddingId = Guid.NewGuid();
+        var content = """{"events":{"enabled":true,"showFromWeddingEvents":true}}""";
+        var website = CreateWebsiteEntity(weddingId, isPublished: true, content: content);
+        var ceremonyId = Guid.NewGuid();
+        var receptionId = Guid.NewGuid();
+        var events = new List<Event>
+        {
+            new() { Id = ceremonyId, WeddingId = weddingId, Name = "Ceremony", Location = "Church", StartDate = DateTime.UtcNow, Guests = new List<Guest>() },
+            new() { Id = receptionId, WeddingId = weddingId, Name = "Reception", Location = "Ballroom", StartDate = DateTime.UtcNow, Guests = new List<Guest>() }
+        };
+        var flowId = Guid.NewGuid();
+        var websiteRepoMock = new Mock<IWeddingWebsiteRepository>();
+        websiteRepoMock.Setup(r => r.GetPublishedBySlugAsync("test-wedding")).ReturnsAsync(website);
+        var eventRepoMock = new Mock<IEventRepository>();
+        eventRepoMock.Setup(r => r.GetByWeddingIdForPublicAsync(weddingId)).ReturnsAsync(events);
+        var flowRepoMock = new Mock<IInvitationFlowRepository>();
+        flowRepoMock.Setup(r => r.GetByWeddingIdAsync(weddingId)).ReturnsAsync(new List<InvitationFlow>
+        {
+            new() { Id = flowId, WeddingId = weddingId, Name = "Ceremony only", Passcode = "secret", EventIds = new List<Guid> { ceremonyId } }
+        });
+        var service = CreateService(websiteRepoMock, eventRepoMock: eventRepoMock, flowRepoMock: flowRepoMock);
+
+        var result = await service.GetPublicBySlugAsync("test-wedding", flowId);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.RequiresPasscode);
+        Assert.NotNull(result.Value.Website!.Events);
+        Assert.Single(result.Value.Website.Events!);
+        Assert.Equal("Ceremony", result.Value.Website.Events![0].Name);
+    }
+
+    [Fact]
+    public async Task GetPublicBySlugAsync_OpenFlow_FiltersEventsWithoutPasscode()
+    {
+        var weddingId = Guid.NewGuid();
+        var content = """{"events":{"enabled":true,"showFromWeddingEvents":true}}""";
+        var website = CreateWebsiteEntity(weddingId, isPublished: true, content: content);
+        var ceremonyId = Guid.NewGuid();
+        var receptionId = Guid.NewGuid();
+        var events = new List<Event>
+        {
+            new() { Id = ceremonyId, WeddingId = weddingId, Name = "Ceremony", Location = "Church", StartDate = DateTime.UtcNow, Guests = new List<Guest>() },
+            new() { Id = receptionId, WeddingId = weddingId, Name = "Reception", Location = "Ballroom", StartDate = DateTime.UtcNow, Guests = new List<Guest>() }
+        };
+        var websiteRepoMock = new Mock<IWeddingWebsiteRepository>();
+        websiteRepoMock.Setup(r => r.GetPublishedBySlugAsync("test-wedding")).ReturnsAsync(website);
+        var eventRepoMock = new Mock<IEventRepository>();
+        eventRepoMock.Setup(r => r.GetByWeddingIdForPublicAsync(weddingId)).ReturnsAsync(events);
+        var flowRepoMock = new Mock<IInvitationFlowRepository>();
+        flowRepoMock.Setup(r => r.GetByWeddingIdAsync(weddingId)).ReturnsAsync(new List<InvitationFlow>
+        {
+            new() { Id = Guid.NewGuid(), WeddingId = weddingId, Name = "Everyone", Passcode = null, EventIds = new List<Guid> { receptionId } }
+        });
+        var service = CreateService(websiteRepoMock, eventRepoMock: eventRepoMock, flowRepoMock: flowRepoMock);
+
+        var result = await service.GetPublicBySlugAsync("test-wedding", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.RequiresPasscode);
+        Assert.Single(result.Value.Website!.Events!);
+        Assert.Equal("Reception", result.Value.Website.Events![0].Name);
     }
 
     // --- DeleteAsync ---

@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.DataProtection;
 using WeddingManager.Domain.DTO;
 using WeddingManager.Domain.Interfaces;
+using WeddingManager.Web.Endpoints.Rsvp;
 using WeddingManager.Web.Extensions;
 using WeddingManager.Web.Models;
 
@@ -10,16 +12,17 @@ public class GetPublicWebsiteEndpoint : IEndpoint
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
         app.MapGet("/w/{slug}",
-                async (string slug, IWeddingWebsiteService websiteService) =>
+                async (string slug, HttpContext http, IWeddingWebsiteService websiteService, IDataProtectionProvider dp) =>
                 {
-                    var result = await websiteService.GetPublicBySlugAsync(slug);
+                    var unlockedFlowId = RsvpFlowCookie.ResolveFlowId(http, dp);
+                    var result = await websiteService.GetPublicBySlugAsync(slug, unlockedFlowId);
                     return result.IsSuccess ? Results.Ok(result.Value) : result.ToErrorResult();
                 })
             .WithTags("Public Website")
             .WithName("GetPublicWebsite")
             .AllowAnonymous()
             .RequireRateLimiting("PublicApi")
-            .Produces<PublicWeddingWebsiteDto>(200)
+            .Produces<PublicWebsiteStateDto>(200)
             .Produces<ErrorResponse>(404);
     }
 }

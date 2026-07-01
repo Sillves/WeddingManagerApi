@@ -19,7 +19,7 @@ public class RsvpServiceTests
         var ctx = new Context();
         ctx.FlowRepo.Setup(r => r.GetByWeddingIdAsync(WeddingId)).ReturnsAsync(new List<InvitationFlow>());
 
-        var result = await ctx.Service.GetFlowStateAsync("slug");
+        var result = await ctx.Service.GetFlowStateAsync("slug", null);
 
         Assert.True(result.IsSuccess);
         Assert.False(result.Value!.HasFlows);
@@ -32,7 +32,7 @@ public class RsvpServiceTests
         ctx.FlowRepo.Setup(r => r.GetByWeddingIdAsync(WeddingId))
             .ReturnsAsync(new List<InvitationFlow> { Flow(passcode: null) });
 
-        var result = await ctx.Service.GetFlowStateAsync("slug");
+        var result = await ctx.Service.GetFlowStateAsync("slug", null);
 
         Assert.True(result.IsSuccess);
         Assert.True(result.Value!.HasFlows);
@@ -47,7 +47,36 @@ public class RsvpServiceTests
         ctx.FlowRepo.Setup(r => r.GetByWeddingIdAsync(WeddingId))
             .ReturnsAsync(new List<InvitationFlow> { Flow(passcode: "abc") });
 
-        var result = await ctx.Service.GetFlowStateAsync("slug");
+        var result = await ctx.Service.GetFlowStateAsync("slug", null);
+
+        Assert.True(result.Value!.RequiresPasscode);
+        Assert.Null(result.Value.Flow);
+    }
+
+    [Fact]
+    public async Task GetFlowStateAsync_ReturnsFlowDirectly_WhenUnlockedFlowMatches()
+    {
+        var ctx = new Context();
+        var flow = Flow(passcode: "abc");
+        ctx.FlowRepo.Setup(r => r.GetByWeddingIdAsync(WeddingId))
+            .ReturnsAsync(new List<InvitationFlow> { flow });
+
+        var result = await ctx.Service.GetFlowStateAsync("slug", flow.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.RequiresPasscode);
+        Assert.NotNull(result.Value.Flow);
+        Assert.Equal(flow.Id, result.Value.Flow!.FlowId);
+    }
+
+    [Fact]
+    public async Task GetFlowStateAsync_RequiresPasscode_WhenUnlockedFlowUnknown()
+    {
+        var ctx = new Context();
+        ctx.FlowRepo.Setup(r => r.GetByWeddingIdAsync(WeddingId))
+            .ReturnsAsync(new List<InvitationFlow> { Flow(passcode: "abc") });
+
+        var result = await ctx.Service.GetFlowStateAsync("slug", Guid.NewGuid());
 
         Assert.True(result.Value!.RequiresPasscode);
         Assert.Null(result.Value.Flow);
