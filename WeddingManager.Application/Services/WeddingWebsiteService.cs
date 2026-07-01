@@ -257,8 +257,8 @@ public class WeddingWebsiteService(
                     enabled = true,
                     title = "Ceremony",
                     venue = "",
-                    address = wedding.Location,
-                    date = wedding.Date.ToString("o"),
+                    address = "",
+                    date = "",
                     description = "",
                     mapUrl = ""
                 },
@@ -268,7 +268,7 @@ public class WeddingWebsiteService(
                     title = "Reception",
                     venue = "",
                     address = "",
-                    date = wedding.Date.ToString("o"),
+                    date = "",
                     description = "",
                     mapUrl = ""
                 }
