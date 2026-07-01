@@ -451,6 +451,36 @@ public class WeddingWebsiteServiceTests
     }
 
     [Fact]
+    public async Task GetPublicBySlugAsync_NeverExposesGuestList()
+    {
+        var weddingId = Guid.NewGuid();
+        var content = """{"events":{"enabled":true,"showFromWeddingEvents":true}}""";
+        var website = CreateWebsiteEntity(weddingId, isPublished: true, content: content);
+        var events = new List<Event>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(), WeddingId = weddingId, Name = "Ceremony", Location = "Church", StartDate = DateTime.UtcNow,
+                Guests = new List<Guest>
+                {
+                    new() { Id = Guid.NewGuid(), Name = "Jane", Surname = "Doe", Email = "jane@x.com" }
+                }
+            }
+        };
+        var websiteRepoMock = new Mock<IWeddingWebsiteRepository>();
+        websiteRepoMock.Setup(r => r.GetPublishedBySlugAsync("test-wedding")).ReturnsAsync(website);
+        var eventRepoMock = new Mock<IEventRepository>();
+        eventRepoMock.Setup(r => r.GetByWeddingIdForPublicAsync(weddingId)).ReturnsAsync(events);
+        var service = CreateService(websiteRepoMock, eventRepoMock: eventRepoMock);
+
+        var result = await service.GetPublicBySlugAsync("test-wedding", null);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value!.Website!.Events);
+        Assert.All(result.Value.Website.Events!, e => Assert.Empty(e.GuestDtos));
+    }
+
+    [Fact]
     public async Task GetPublicBySlugAsync_ExcludesEventsWhenDisabled()
     {
         var content = """{"events":{"enabled":false,"showFromWeddingEvents":false}}""";

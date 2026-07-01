@@ -101,7 +101,10 @@ een open flow. Een unlock via de website telt zo meteen voor de RSVP.
 - `GetFlowStateAsync` met geldige `unlockedFlowId` → directe flow, `RequiresPasscode=false`.
 - met ongeldige/andere-wedding flowId → `RequiresPasscode=true`.
 
-## Buiten scope
+## Privacy-fix (meegenomen)
 
-`EventToDto` neemt momenteel `GuestDtos` mee op de publieke website — een bestaand
-privacy-punt, los van deze feature. Wordt apart afgehandeld.
+`EventToDto` nam `GuestDtos` mee op de publieke website (`GET /w/{slug}`) — een anoniem
+endpoint. Dat lekte per event de volledige gastenlijst (naam, achternaam, e-mail,
+dieetwensen, RSVP-status) in de JSON-respons. `BuildPublicWebsiteDtoAsync` leegt nu
+`GuestDtos` voor elk publiek event; test `GetPublicBySlugAsync_NeverExposesGuestList`
+dekt dit af. De publieke templates gebruiken enkel naam/datum/locatie/beschrijving.

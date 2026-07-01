@@ -203,7 +203,14 @@ public class WeddingWebsiteService(
             {
                 events = events.Where(e => activeFlow.EventIds.Contains(e.Id));
             }
-            dto.Events = events.Select(e => mapper.EventToDto(e)).ToList();
+            // Public, anonymous endpoint: never expose the guest list. EventToDto maps guests, so
+            // strip them here — the website only needs name/date/location/description of an event.
+            dto.Events = events.Select(e =>
+            {
+                var eventDto = mapper.EventToDto(e);
+                eventDto.GuestDtos = new List<GuestDto>();
+                return eventDto;
+            }).ToList();
         }
 
         return dto;
