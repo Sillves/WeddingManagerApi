@@ -12,6 +12,7 @@ public class WeddingWebsiteService(
     IWeddingWebsiteRepository websiteRepository,
     IWeddingRepository weddingRepository,
     IEventRepository eventRepository,
+    IInvitationFlowRepository flowRepository,
     ApplicationMapper mapper) : IWeddingWebsiteService
 {
     public async Task<Result<WeddingWebsiteDto>> GetByWeddingIdAsync(Guid weddingId)
@@ -139,12 +140,29 @@ public class WeddingWebsiteService(
         return Result<WeddingWebsiteDto>.Ok(mapper.WebsiteToDto(updatedWebsite!));
     }
 
-    public async Task<Result<PublicWeddingWebsiteDto>> GetPublicBySlugAsync(string slug)
+    public async Task<Result<PublicWebsiteResponseDto>> GetPublicBySlugAsync(string slug, Guid? unlockedFlowId)
     {
         var website = await websiteRepository.GetPublishedBySlugAsync(slug);
         if (website == null)
         {
-            return Result<PublicWeddingWebsiteDto>.Fail(new Error(ErrorCodes.NotFound, "Website not found or not published"));
+            return Result<PublicWebsiteResponseDto>.Fail(new Error(ErrorCodes.NotFound, "Website not found or not published"));
+        }
+
+        // Resolve which invitation flow (if any) governs access and event visibility.
+        // - No flows: the site is fully public (unchanged behaviour for weddings not using flows).
+        // - An open (no-passcode) flow: accessible to everyone, events limited to that flow.
+        // - Only passcoded flows: a valid unlocked flow session is required, else the site is gated.
+        var flows = (await flowRepository.GetByWeddingIdAsync(website.WeddingId)).ToList();
+        InvitationFlow? activeFlow = null;
+        if (flows.Count > 0)
+        {
+            activeFlow = flows.FirstOrDefault(f => f.Passcode == null);
+            if (activeFlow == null)
+            {
+                activeFlow = unlockedFlowId is { } id ? flows.FirstOrDefault(f => f.Id == id) : null;
+                if (activeFlow == null)
+                    return Result<PublicWebsiteResponseDto>.Ok(new PublicWebsiteResponseDto { RequiresPasscode = true });
+            }
         }
 
         var dto = new PublicWeddingWebsiteDto
@@ -158,7 +176,7 @@ public class WeddingWebsiteService(
             Content = JsonDocument.Parse(website.Content)
         };
 
-        // Include events if the events section is enabled
+        // Include events if the events section is enabled, filtered to the active flow when present.
         var content = JsonDocument.Parse(website.Content);
         if (content.RootElement.TryGetProperty("events", out var eventsSection) &&
             eventsSection.TryGetProperty("enabled", out var enabled) &&
@@ -167,10 +185,12 @@ public class WeddingWebsiteService(
             showEvents.GetBoolean())
         {
             var events = await eventRepository.GetByWeddingIdForPublicAsync(website.WeddingId);
+            if (activeFlow != null)
+                events = events.Where(e => activeFlow.EventIds.Contains(e.Id));
             dto.Events = events.Select(e => mapper.EventToDto(e)).ToList();
         }
 
-        return Result<PublicWeddingWebsiteDto>.Ok(dto);
+        return Result<PublicWebsiteResponseDto>.Ok(new PublicWebsiteResponseDto { Website = dto });
     }
 
     public async Task<Result> DeleteAsync(Guid weddingId)

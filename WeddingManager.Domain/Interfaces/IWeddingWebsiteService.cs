@@ -10,6 +10,6 @@ public interface IWeddingWebsiteService
     Task<Result<WeddingWebsiteDto>> UpdateAsync(Guid weddingId, UpdateWeddingWebsiteRequestDto request);
     Task<Result<WeddingWebsiteDto>> PublishAsync(Guid weddingId);
     Task<Result<WeddingWebsiteDto>> UnpublishAsync(Guid weddingId);
-    Task<Result<PublicWeddingWebsiteDto>> GetPublicBySlugAsync(string slug);
+    Task<Result<PublicWebsiteResponseDto>> GetPublicBySlugAsync(string slug, Guid? unlockedFlowId);
     Task<Result> DeleteAsync(Guid weddingId);
 }

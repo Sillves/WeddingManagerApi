@@ -167,10 +167,6 @@ public class RsvpService(
         var flows = (await flowRepository.GetByWeddingIdAsync(weddingId)).ToList();
 
         var eventNames = events.ToDictionary(e => e.Id, e => e.Name);
-        var customEventNames = flows
-            .SelectMany(f => f.CustomEvents)
-            .GroupBy(ce => ce.Id)
-            .ToDictionary(g => g.Key, g => g.First().Name);
 
         var dtos = responses.Select(r =>
         {
@@ -188,9 +184,7 @@ public class RsvpService(
                 Status = r.Status,
                 AttendingEventIds = r.AttendingEventIds,
                 AttendingEventNames = r.AttendingEventIds
-                    .Select(id => eventNames.GetValueOrDefault(id)
-                        ?? customEventNames.GetValueOrDefault(id)
-                        ?? "(deleted event)")
+                    .Select(id => eventNames.GetValueOrDefault(id) ?? "(deleted event)")
                     .ToList(),
                 CustomAnswers = DeserializeAnswers(r.CustomAnswers),
                 IsPlusOne = r.Guest.PlusOneOfGuestId != null,
@@ -207,15 +201,12 @@ public class RsvpService(
         var realEventIds = (await eventRepository.GetByWeddingIdForPublicAsync(weddingId))
             .Select(e => e.Id)
             .ToHashSet();
-        var valid = flow.EventIds.Where(realEventIds.Contains).ToHashSet();
-        foreach (var ce in flow.CustomEvents)
-            valid.Add(ce.Id);
-        return valid;
+        return flow.EventIds.Where(realEventIds.Contains).ToHashSet();
     }
 
     private async Task<RsvpFlowPublicDto> BuildPublicFlowAsync(Guid weddingId, InvitationFlow flow)
     {
-        var realEvents = (await eventRepository.GetByWeddingIdForPublicAsync(weddingId))
+        var allEvents = (await eventRepository.GetByWeddingIdForPublicAsync(weddingId))
             .Where(e => flow.EventIds.Contains(e.Id))
             .Select(e => new RsvpEventOptionDto
             {
@@ -223,18 +214,7 @@ public class RsvpService(
                 Name = e.Name,
                 StartDate = e.StartDate,
                 Location = e.Location
-            });
-
-        var customEvents = flow.CustomEvents.Select(ce => new RsvpEventOptionDto
-        {
-            Id = ce.Id,
-            Name = ce.Name,
-            StartDate = ce.StartDate,
-            Location = ce.Location
-        });
-
-        var allEvents = realEvents
-            .Concat(customEvents)
+            })
             .OrderBy(e => e.StartDate ?? DateTime.MaxValue)
             .ToList();
 

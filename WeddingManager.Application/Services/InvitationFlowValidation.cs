@@ -8,8 +8,7 @@ public static class InvitationFlowValidation
     public static Result ValidateInput(
         string name,
         string? passcode,
-        List<QuestionDefinition> questions,
-        List<CustomEventDefinition> customEvents)
+        List<QuestionDefinition> questions)
     {
         var errors = new List<Error>();
 
@@ -42,12 +41,6 @@ public static class InvitationFlowValidation
                 errors.Add(new Error(ErrorCodes.Validation, $"Question \"{q.Label}\" cannot have options for its type"));
             if (needsOptions && q.Options!.Any(string.IsNullOrWhiteSpace))
                 errors.Add(new Error(ErrorCodes.Validation, $"Question \"{q.Label}\" has a blank option"));
-        }
-
-        foreach (var ce in customEvents)
-        {
-            if (string.IsNullOrWhiteSpace(ce.Name))
-                errors.Add(new Error(ErrorCodes.Validation, "Every custom event needs a name"));
         }
 
         return errors.Count > 0 ? Result.Fail(errors) : Result.Ok();

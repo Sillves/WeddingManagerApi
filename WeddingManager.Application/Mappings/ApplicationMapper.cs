@@ -149,7 +149,6 @@ public partial class ApplicationMapper
             IncludePlusOne = flow.IncludePlusOne,
             CustomQuestions = flow.CustomQuestions,
             EventIds = flow.EventIds,
-            CustomEvents = flow.CustomEvents,
             ResponseCount = responseCount,
             CreatedAt = flow.CreatedAt,
             UpdatedAt = flow.UpdatedAt

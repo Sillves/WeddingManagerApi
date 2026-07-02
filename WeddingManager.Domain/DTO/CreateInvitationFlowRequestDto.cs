@@ -9,5 +9,4 @@ public class CreateInvitationFlowRequestDto
     public bool IncludePlusOne { get; set; }
     public List<QuestionDefinition> CustomQuestions { get; set; } = new();
     public List<Guid> EventIds { get; set; } = new();
-    public List<CustomEventDefinition> CustomEvents { get; set; } = new();
 }

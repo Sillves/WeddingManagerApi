@@ -25,11 +25,6 @@ public class InvitationFlowConfiguration : IEntityTypeConfiguration<InvitationFl
             .HasConversion(JsonbConverters.ListConverter<Guid>())
             .Metadata.SetValueComparer(JsonbConverters.ListComparer<Guid>());
 
-        builder.Property(e => e.CustomEvents)
-            .HasColumnType("jsonb")
-            .HasConversion(JsonbConverters.ListConverter<CustomEventDefinition>())
-            .Metadata.SetValueComparer(JsonbConverters.ListComparer<CustomEventDefinition>());
-
         builder.HasIndex(e => e.WeddingId);
 
         // At most one flow per (wedding, passcode) when a passcode is set.

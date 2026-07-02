@@ -18,11 +18,8 @@ public class InvitationFlow
 
     public List<QuestionDefinition> CustomQuestions { get; set; } = new();
 
-    /// <summary>Ids of real <see cref="Event"/> rows this flow exposes for selection.</summary>
+    /// <summary>Ids of real <see cref="Event"/> rows this flow exposes. The only event source for a flow.</summary>
     public List<Guid> EventIds { get; set; } = new();
-
-    /// <summary>Flow-local events not backed by an <see cref="Event"/> row.</summary>
-    public List<CustomEventDefinition> CustomEvents { get; set; } = new();
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

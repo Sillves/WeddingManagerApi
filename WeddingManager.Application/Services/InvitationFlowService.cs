@@ -25,7 +25,7 @@ public class InvitationFlowService(
         var passcode = NormalizePasscode(requestDto.Passcode);
 
         var validation = InvitationFlowValidation.ValidateInput(
-            requestDto.Name, passcode, requestDto.CustomQuestions, requestDto.CustomEvents);
+            requestDto.Name, passcode, requestDto.CustomQuestions);
         if (!validation.IsSuccess)
             return Result<InvitationFlowDto>.Fail(validation.Errors);
 
@@ -47,7 +47,6 @@ public class InvitationFlowService(
             IncludePlusOne = requestDto.IncludePlusOne,
             CustomQuestions = NormalizeQuestions(requestDto.CustomQuestions),
             EventIds = requestDto.EventIds.Distinct().ToList(),
-            CustomEvents = NormalizeCustomEvents(requestDto.CustomEvents),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -66,7 +65,7 @@ public class InvitationFlowService(
         var passcode = NormalizePasscode(requestDto.Passcode);
 
         var validation = InvitationFlowValidation.ValidateInput(
-            requestDto.Name, passcode, requestDto.CustomQuestions, requestDto.CustomEvents);
+            requestDto.Name, passcode, requestDto.CustomQuestions);
         if (!validation.IsSuccess)
             return Result<InvitationFlowDto>.Fail(validation.Errors);
 
@@ -84,7 +83,6 @@ public class InvitationFlowService(
         flow.IncludePlusOne = requestDto.IncludePlusOne;
         flow.CustomQuestions = NormalizeQuestions(requestDto.CustomQuestions);
         flow.EventIds = requestDto.EventIds.Distinct().ToList();
-        flow.CustomEvents = NormalizeCustomEvents(requestDto.CustomEvents);
         flow.UpdatedAt = DateTime.UtcNow;
 
         await flowRepository.UpdateAsync(flow);
@@ -160,15 +158,5 @@ public class InvitationFlowService(
             q.Label = q.Label.Trim();
         }
         return questions;
-    }
-
-    private static List<CustomEventDefinition> NormalizeCustomEvents(List<CustomEventDefinition> events)
-    {
-        foreach (var e in events)
-        {
-            if (e.Id == Guid.Empty) e.Id = Guid.NewGuid();
-            e.Name = e.Name.Trim();
-        }
-        return events;
     }
 }

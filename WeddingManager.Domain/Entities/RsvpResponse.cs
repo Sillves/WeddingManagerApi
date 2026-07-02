@@ -17,7 +17,7 @@ public class RsvpResponse
 
     public RsvpResponseStatus Status { get; set; }
 
-    /// <summary>Subset of the flow's exposed events (real Event ids and/or flow-local custom-event ids).</summary>
+    /// <summary>Subset of the flow's exposed events. Real <see cref="Event"/> ids.</summary>
     public List<Guid> AttendingEventIds { get; set; } = new();
 
     /// <summary>Raw jsonb object keyed by question id; heterogeneous values. Empty object for plus-ones.</summary>
